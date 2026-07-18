@@ -1,0 +1,15 @@
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# Backend
+backend/.env
+backend/bin/
+
+# Environment secrets
+.env
+
+# OS
+.DS_Store
+Thumbs.db
