@@ -1,0 +1,94 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: hayastan-atlas-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-hayastan_atlas}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hayastan-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hayastan-atlas-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-hayastan_atlas}
+      PORT: 8080
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      APP_ENV: ${APP_ENV:-development}
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hayastan-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    develop:
+      watch:
+        - path: ./backend
+          action: rebuild
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hayastan-atlas-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081}
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - hayastan-network
+    volumes:
+      - ./frontend/app:/app/app
+      - ./frontend/components:/app/components
+      - ./frontend/lib:/app/lib
+    develop:
+      watch:
+        - path: ./frontend/app
+          target: /app/app
+          action: sync
+        - path: ./frontend/components
+          target: /app/components
+          action: sync
+        - path: ./frontend/lib
+          target: /app/lib
+          action: sync
+        - path: ./frontend/package.json
+          action: rebuild
+
+volumes:
+  postgres_data:
+
+networks:
+  hayastan-network:
+    driver: bridge

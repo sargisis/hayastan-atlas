@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+npm-debug.log
+.env
+.env.local
+.next
+.eslintcache
+.vercel
+.DS_Store
+*.log
