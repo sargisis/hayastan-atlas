@@ -122,7 +122,7 @@ export default function Timeline({ year, onChange }: Props) {
       <div className="max-w-5xl mx-auto">
         {/* Era color bands — click jumps to era START */}
         {eras && (
-          <div className="relative h-3 rounded-full overflow-hidden mb-4 bg-stone-800">
+          <div className="relative h-2 md:h-3 rounded-full overflow-hidden mb-4 bg-stone-800">
             {eras.map((era) => (
               <div
                 key={era.id}
@@ -149,14 +149,14 @@ export default function Timeline({ year, onChange }: Props) {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => jumpEra(-1)}
-              className="w-8 h-8 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-sm transition-colors"
+              className="w-7 h-7 md:w-8 md:h-8 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs md:text-sm transition-colors"
               title="Previous era"
             >
               ⏮
             </button>
             <button
               onClick={() => setPlaying((p) => !p)}
-              className={`w-8 h-8 rounded-md text-sm transition-colors ${
+              className={`w-7 h-7 md:w-8 md:h-8 rounded-md text-xs md:text-sm transition-colors ${
                 playing
                   ? "bg-armenia-red text-white"
                   : "bg-stone-800 hover:bg-stone-700 text-stone-300"
@@ -167,7 +167,7 @@ export default function Timeline({ year, onChange }: Props) {
             </button>
             <button
               onClick={() => jumpEra(1)}
-              className="w-8 h-8 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-sm transition-colors"
+              className="w-7 h-7 md:w-8 md:h-8 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs md:text-sm transition-colors"
               title="Next era"
             >
               ⏭
@@ -196,8 +196,8 @@ export default function Timeline({ year, onChange }: Props) {
           </div>
         </div>
 
-        {/* Quick jump labels */}
-        <div className="flex justify-between mt-1 px-32">
+        {/* Quick jump labels — hidden on mobile */}
+        <div className="hidden md:flex justify-between mt-1 px-32">
           {[-800, -500, -100, 300, 700, 1000, 1375, 1828, 1991].map((y) => (
             <button
               key={y}

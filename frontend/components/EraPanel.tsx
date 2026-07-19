@@ -29,7 +29,7 @@ export default function EraPanel({ era, year, kings }: Props) {
   return (
     <div
       key={era.id}
-      className="anim-fade relative flex items-center gap-6 px-6 py-3 bg-stone-900/95 border-b border-stone-800 backdrop-blur overflow-hidden"
+      className="anim-fade relative flex flex-col md:flex-row md:items-center gap-1 md:gap-6 px-4 md:px-6 py-2 md:py-3 bg-stone-900/95 border-b border-stone-800 backdrop-blur overflow-hidden"
       style={{ borderLeftColor: era.color, borderLeftWidth: 4 }}
     >
       <div
@@ -38,35 +38,35 @@ export default function EraPanel({ era, year, kings }: Props) {
       />
 
       <div className="relative flex flex-col min-w-0">
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <span className="font-bold text-white text-lg leading-tight">{era.name}</span>
-          <span className="text-stone-400 text-sm">
+        <div className="flex items-baseline gap-2 md:gap-3 flex-wrap">
+          <span className="font-bold text-white text-base md:text-lg leading-tight">{era.name}</span>
+          <span className="text-stone-400 text-xs md:text-sm">
             {fmt(era.start_year)} – {fmt(era.end_year)}
           </span>
           {era.capital && (
-            <span className="text-stone-500 text-sm">
+            <span className="hidden md:inline text-stone-500 text-sm">
               Capital: <span className="text-stone-300">{era.capital}</span>
             </span>
           )}
           {rulers.length > 0 && (
-            <span className="text-stone-500 text-sm">
+            <span className="text-stone-500 text-xs md:text-sm">
               ♔{" "}
               <span className="text-armenia-orange font-medium">
                 {rulers.map((r) => r.name).join(", ")}
               </span>
               {rulers[0]?.name_hy && (
-                <span className="text-stone-500 ml-1">({rulers[0].name_hy})</span>
+                <span className="hidden md:inline text-stone-500 ml-1">({rulers[0].name_hy})</span>
               )}
             </span>
           )}
         </div>
         {era.description && (
-          <p className="text-stone-400 text-xs mt-0.5 truncate max-w-3xl">{era.description}</p>
+          <p className="hidden md:block text-stone-400 text-xs mt-0.5 truncate max-w-3xl">{era.description}</p>
         )}
       </div>
 
-      <div className="ml-auto relative shrink-0 text-right">
-        <div className="font-bold text-2xl tabular-nums" style={{ color: era.color }}>
+      <div className="md:ml-auto relative shrink-0 md:text-right">
+        <div className="font-bold text-lg md:text-2xl tabular-nums" style={{ color: era.color }}>
           {fmt(year)}
         </div>
       </div>

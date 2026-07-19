@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import useSWR from "swr";
 import type { User } from "@/lib/types";
 import SearchModal from "./SearchModal";
+import LangToggle from "./LangToggle";
 
 const fetcher = (url: string) =>
   fetch(url, { credentials: "include" }).then((r) => {
@@ -57,6 +58,8 @@ export default function Navbar() {
 
       {navLink("/map", "Map")}
       {navLink("/kings", "Kings")}
+      {navLink("/events", "Events")}
+      {navLink("/bookmarks", "Bookmarks")}
 
       {/* Search button */}
       <button
@@ -73,6 +76,7 @@ export default function Navbar() {
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       <div className="ml-auto flex items-center gap-3">
+        <LangToggle />
         {user ? (
           <>
             {user.avatar_url && (
