@@ -68,16 +68,24 @@ export default function KingCard({ king, color, dynastyStart, dynastyEnd, index 
         </div>
       </div>
 
-      {/* View on map */}
-      <Link
-        href={`/map?year=${king.reign_start}`}
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-armenia-orange transition-colors"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-        View on map at {fmt(king.reign_start)} →
-      </Link>
+      <div className="mt-3 flex items-center gap-3">
+        <Link
+          href={`/kings/${king.id}`}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-400 hover:text-white transition-colors"
+        >
+          View details →
+        </Link>
+        <span className="text-stone-700">·</span>
+        <Link
+          href={`/map?year=${king.reign_start}`}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-armenia-orange transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          Map at {fmt(king.reign_start)}
+        </Link>
+      </div>
     </div>
   );
 }

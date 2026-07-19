@@ -26,11 +26,17 @@ WORKDIR /app
 # Install runtime dependencies (ca-certificates for HTTPS/OAuth2)
 RUN apk add --no-cache ca-certificates
 
+# Run as non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copy binary from builder
 COPY --from=builder /app/server .
 
 # Copy .env.example as template
 COPY .env.example .env.example
+
+RUN chown appuser:appgroup /app/server
+USER appuser
 
 EXPOSE 8080
 

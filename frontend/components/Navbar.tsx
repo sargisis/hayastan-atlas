@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import type { User } from "@/lib/types";
+import SearchModal from "./SearchModal";
 
 const fetcher = (url: string) =>
   fetch(url, { credentials: "include" }).then((r) => {
@@ -13,7 +15,19 @@ const fetcher = (url: string) =>
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
   const { data: user } = useSWR<User | null>("/api/me", fetcher);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const navLink = (href: string, label: string) => {
     const active = pathname.startsWith(href);
@@ -43,6 +57,20 @@ export default function Navbar() {
 
       {navLink("/map", "Map")}
       {navLink("/kings", "Kings")}
+
+      {/* Search button */}
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-stone-500 hover:text-stone-300 hover:bg-stone-800 transition-all border border-stone-800"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+        </svg>
+        <span className="hidden sm:block">Search</span>
+        <kbd className="hidden sm:block text-[10px] text-stone-600 border border-stone-700 rounded px-1 py-0.5">⌘K</kbd>
+      </button>
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       <div className="ml-auto flex items-center gap-3">
         {user ? (
