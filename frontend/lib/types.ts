@@ -1,6 +1,7 @@
 export interface Era {
   id: number;
   name: string;
+  name_hy: string;
   start_year: number;
   end_year: number;
   capital: string;

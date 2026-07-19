@@ -88,7 +88,7 @@ export default function EventsPage() {
                 : { borderColor: era.color + "55" }
             }
           >
-            {era.name}
+            {lang === "hy" && era.name_hy ? era.name_hy : era.name}
           </button>
         ))}
       </div>
@@ -107,7 +107,7 @@ export default function EventsPage() {
                 {era ? (
                   <>
                     <div className="w-2.5 h-6 rounded-sm shrink-0" style={{ backgroundColor: era.color }} />
-                    <h2 className="text-lg font-bold text-white">{era.name}</h2>
+                    <h2 className="text-lg font-bold text-white">{lang === "hy" && era.name_hy ? era.name_hy : era.name}</h2>
                     <span className="text-stone-500 text-sm tabular-nums">
                       {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
                     </span>

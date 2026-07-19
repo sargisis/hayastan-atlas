@@ -5,6 +5,7 @@ import "time"
 type Era struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
+	NameHY      string `json:"name_hy"`
 	StartYear   int    `json:"start_year"`
 	EndYear     int    `json:"end_year"`
 	Capital     string `json:"capital"`

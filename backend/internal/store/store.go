@@ -18,7 +18,7 @@ func New(db *pgxpool.Pool) *Store {
 
 func (s *Store) ListEras(ctx context.Context) ([]model.Era, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, name, start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
+		SELECT id, name, COALESCE(name_hy,''), start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
 		FROM eras ORDER BY start_year`)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (s *Store) ListEras(ctx context.Context) ([]model.Era, error) {
 	var eras []model.Era
 	for rows.Next() {
 		var e model.Era
-		if err := rows.Scan(&e.ID, &e.Name, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description); err != nil {
+		if err := rows.Scan(&e.ID, &e.Name, &e.NameHY, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description); err != nil {
 			return nil, err
 		}
 		eras = append(eras, e)

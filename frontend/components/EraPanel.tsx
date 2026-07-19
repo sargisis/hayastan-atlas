@@ -37,7 +37,7 @@ export default function EraPanel({ era, year, kings }: Props) {
 
       <div className="relative flex flex-col min-w-0">
         <div className="flex items-baseline gap-2 md:gap-3 flex-wrap">
-          <span className="font-bold text-white text-base md:text-lg leading-tight">{era.name}</span>
+          <span className="font-bold text-white text-base md:text-lg leading-tight">{lang === "hy" && era.name_hy ? era.name_hy : era.name}</span>
           <span className="text-stone-400 text-xs md:text-sm">
             {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
           </span>
