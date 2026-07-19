@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import ShareButton from "@/components/ShareButton";
 import useSWR from "swr";
 import Timeline from "@/components/Timeline";
 import EraPanel from "@/components/EraPanel";
@@ -58,6 +59,7 @@ export default function MapPage() {
           </div>
         )}
         <EventsPanel events={events} year={year} onJump={handleTimelineChange} />
+        <ShareButton year={year} />
       </div>
 
       {/* Bottom timeline */}

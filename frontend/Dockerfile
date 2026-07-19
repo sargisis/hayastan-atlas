@@ -36,6 +36,11 @@ RUN npm ci --only=production
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 
+# Run as non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
+USER appuser
+
 EXPOSE 3000
 
 # Use dumb-init to run Node.js (better signal handling)
