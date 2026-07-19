@@ -76,6 +76,15 @@ const translations: Record<string, Record<Lang, string>> = {
   sign_in_to_view: { en: "Sign in to view your bookmarks", hy: "Մուտք գործեք ձեր էջանիշերը տեսնելու համար" },
   no_bookmarks: { en: "No bookmarks yet", hy: "Էջանիշեր չկան" },
   sign_in: { en: "Sign in with Google", hy: "Մուտք Google-ով" },
+  // Kings page
+  kings_title: { en: "Kings & Rulers of Armenia", hy: "Հայաստանի Թագավորներն ու Կառավարիչները" },
+  kings_subtitle: { en: "Twenty-eight centuries of monarchs — from the kings of Urartu who founded Yerevan, through Tigranes the Great whose empire touched three seas, to the last king of Cilicia.", hy: "Քսանութ դարի君主 — Ուրարտուի թագավորներից մինչ Կիլիկիայի վերջին թագավորը, Տիգրան Մեծ ու Տրդատ Ա՝ Հայոց պատմության հսկաները։" },
+  loading_rulers: { en: "Loading rulers…", hy: "Բեռնում…" },
+  dynasty_word: { en: "Dynasty", hy: "Արքայատոհմ" },
+  rulers_count: { en: "rulers", hy: "կառավարիչ" },
+  yrs: { en: "yrs", hy: "տ." },
+  map_at: { en: "Map at", hy: "Քարտեզ" },
+  reign_disclaimer: { en: "Reign dates are based on scholarly consensus; some early dates are approximate.", hy: "Թագավորության ամսաթվերը հիմնված են գիտական կոնսենսուսի վրա, որոշ վաղ ամսաթվեր մոտավոր են։" },
 };
 
 export function t(key: string, lang: Lang): string {
