@@ -7,6 +7,7 @@ export interface Era {
   capital: string;
   color: string;
   description: string;
+  description_hy: string;
 }
 
 export interface King {
@@ -18,6 +19,7 @@ export interface King {
   reign_start: number;
   reign_end: number | null;
   bio: string;
+  bio_hy: string;
   portrait_url: string | null;
 }
 

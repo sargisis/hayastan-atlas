@@ -50,8 +50,10 @@ export default function KingCard({ king, color, dynastyStart, dynastyEnd, index 
         </div>
       </div>
 
-      {king.bio && (
-        <p className="text-stone-400 text-[13px] mt-3 leading-relaxed line-clamp-3">{king.bio}</p>
+      {(king.bio || king.bio_hy) && (
+        <p className="text-stone-400 text-[13px] mt-3 leading-relaxed line-clamp-3">
+          {lang === "hy" && king.bio_hy ? king.bio_hy : king.bio}
+        </p>
       )}
 
       {/* Reign position within dynasty */}

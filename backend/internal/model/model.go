@@ -10,7 +10,8 @@ type Era struct {
 	EndYear     int    `json:"end_year"`
 	Capital     string `json:"capital"`
 	Color       string `json:"color"`
-	Description string `json:"description"`
+	Description   string `json:"description"`
+	DescriptionHY string `json:"description_hy"`
 }
 
 type Territory struct {
@@ -37,6 +38,7 @@ type King struct {
 	ReignStart  int     `json:"reign_start"`
 	ReignEnd    *int    `json:"reign_end"`
 	Bio         string  `json:"bio"`
+	BioHY       string  `json:"bio_hy"`
 	PortraitURL *string `json:"portrait_url"`
 }
 

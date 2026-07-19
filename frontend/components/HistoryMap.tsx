@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { Era, Event, TimelineResponse } from "@/lib/types";
+import { useLang } from "@/lib/lang";
+import { featureNameHY, phaseLabelHY } from "@/lib/mapTranslations";
 
 interface Props {
   year: number;
@@ -22,6 +24,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
   const mapRef = useRef<maplibregl.Map | null>(null);
   const lastPhaseRef = useRef<number | null>(null);
   const [styleReady, setStyleReady] = useState(false);
+  const { lang } = useLang();
 
   // Initialize map once
   useEffect(() => {
@@ -266,6 +269,16 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
     };
   }, []);
 
+  // Switch map label language when lang changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const nameField = lang === "hy" ? ["coalesce", ["get", "name_hy"], ["get", "name"]] : ["get", "name"];
+    map.setLayoutProperty("city-labels", "text-field", nameField);
+    map.setLayoutProperty("territory-labels", "text-field", nameField);
+    map.setLayoutProperty("arrow-label", "text-field", nameField);
+  }, [lang, styleReady]);
+
   // Update era info, events list, and territory phase when year changes
   useEffect(() => {
     const map = mapRef.current;
@@ -286,14 +299,14 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         // Cities existing at this year
         const cityRes = await fetch(`/api/cities?year=${year}`, { signal: controller.signal });
         if (cityRes.ok) {
-          const cities: { name: string; lat: number; lng: number; is_capital: boolean }[] =
+          const cities: { name: string; name_hy: string; lat: number; lng: number; is_capital: boolean }[] =
             (await cityRes.json()) ?? [];
           const citySource = map!.getSource("cities") as maplibregl.GeoJSONSource | undefined;
           citySource?.setData({
             type: "FeatureCollection",
             features: cities.map((c) => ({
               type: "Feature" as const,
-              properties: { name: c.name, capital: c.is_capital },
+              properties: { name: c.name, name_hy: c.name_hy || c.name, capital: c.is_capital },
               geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
             })),
           });
@@ -310,8 +323,20 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
 
         const terr: { phase: number; label: string; fc: any } = await terrRes.json();
-        source.setData(terr.fc);
-        onPhaseLoad?.(terr.label);
+        // Inject name_hy into each feature for Armenian map labels
+        const fc = {
+          ...terr.fc,
+          features: (terr.fc.features ?? []).map((f: any) => ({
+            ...f,
+            properties: {
+              ...f.properties,
+              name_hy: featureNameHY[f.properties?.name] ?? f.properties?.name,
+            },
+          })),
+        };
+        source.setData(fc);
+        const label = lang === "hy" ? (phaseLabelHY[terr.label] ?? terr.label) : terr.label;
+        onPhaseLoad?.(label);
 
         // Fly the camera to fit the Armenian state's borders on phase change
         if (lastPhaseRef.current !== terr.phase && terr.fc.features?.length) {
@@ -341,7 +366,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
     load();
     return () => controller.abort();
-  }, [year, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
+  }, [year, lang, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />;
 }

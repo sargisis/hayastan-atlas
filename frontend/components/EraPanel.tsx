@@ -59,7 +59,9 @@ export default function EraPanel({ era, year, kings }: Props) {
           )}
         </div>
         {era.description && (
-          <p className="hidden md:block text-stone-400 text-xs mt-0.5 truncate max-w-3xl">{era.description}</p>
+          <p className="hidden md:block text-stone-400 text-xs mt-0.5 truncate max-w-3xl">
+            {lang === "hy" && era.description_hy ? era.description_hy : era.description}
+          </p>
         )}
       </div>
 
