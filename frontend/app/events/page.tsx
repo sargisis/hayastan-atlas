@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 import type { Era, Event } from "@/lib/types";
-import { useLang, fmt } from "@/lib/lang";
+import { useLang, fmt, t } from "@/lib/lang";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -50,10 +50,14 @@ export default function EventsPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 w-full">
       <div className="anim-fade-up mb-10 text-center">
         <h1 className="text-4xl font-bold text-white tracking-tight">
-          Historical <span className="text-armenia-orange">Events</span>
+          {lang === "hy" ? (
+            <>Պատմական <span className="text-armenia-orange">Իրադարձություններ</span></>
+          ) : (
+            <>Historical <span className="text-armenia-orange">Events</span></>
+          )}
         </h1>
         <p className="text-stone-400 mt-3 max-w-2xl mx-auto leading-relaxed">
-          Milestones, battles, and turning points across three thousand years of Armenian history.
+          {t("events_subtitle", lang)}
         </p>
       </div>
 
@@ -67,7 +71,7 @@ export default function EventsPage() {
               : "bg-stone-800 text-stone-400 hover:text-white"
           }`}
         >
-          All eras
+          {t("all_eras", lang)}
         </button>
         {eras.map((era) => (
           <button
@@ -84,13 +88,13 @@ export default function EventsPage() {
                 : { borderColor: era.color + "55" }
             }
           >
-            {era.name}
+            {lang === "hy" && era.name_hy ? era.name_hy : era.name}
           </button>
         ))}
       </div>
 
       {sortedEraIds.length === 0 && (
-        <div className="text-center text-stone-500 py-20">No events found.</div>
+        <div className="text-center text-stone-500 py-20">{t("no_events_found", lang)}</div>
       )}
 
       <div className="space-y-12">
@@ -99,19 +103,23 @@ export default function EventsPage() {
           const eraEvents = byEra[eraId].slice().sort((a, b) => a.year - b.year);
           return (
             <section key={eraId}>
-              {era && (
-                <div
-                  className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-800"
-                  style={{ borderLeftColor: era.color }}
-                >
-                  <div className="w-2.5 h-6 rounded-sm shrink-0" style={{ backgroundColor: era.color }} />
-                  <h2 className="text-lg font-bold text-white">{era.name}</h2>
-                  <span className="text-stone-500 text-sm tabular-nums">
-                    {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
-                  </span>
-                  <span className="ml-auto text-stone-600 text-xs">{eraEvents.length} events</span>
-                </div>
-              )}
+              <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-800">
+                {era ? (
+                  <>
+                    <div className="w-2.5 h-6 rounded-sm shrink-0" style={{ backgroundColor: era.color }} />
+                    <h2 className="text-lg font-bold text-white">{lang === "hy" && era.name_hy ? era.name_hy : era.name}</h2>
+                    <span className="text-stone-500 text-sm tabular-nums">
+                      {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2.5 h-6 rounded-sm shrink-0 bg-stone-600" />
+                    <h2 className="text-lg font-bold text-stone-400">{t("other_events", lang)}</h2>
+                  </>
+                )}
+                <span className="ml-auto text-stone-600 text-xs">{eraEvents.length} events</span>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {eraEvents.map((ev, i) => (
                   <div
@@ -137,10 +145,12 @@ export default function EventsPage() {
                         {fmt(ev.year, lang)}
                       </span>
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-stone-100 leading-snug">{ev.title}</div>
+                        <div className="text-sm font-semibold text-stone-100 leading-snug">
+                          {lang === "hy" && ev.title_hy ? ev.title_hy : ev.title}
+                        </div>
                         {ev.description && (
                           <p className="text-xs text-stone-400 mt-1.5 leading-relaxed line-clamp-3">
-                            {ev.description}
+                            {lang === "hy" && ev.description_hy ? ev.description_hy : ev.description}
                           </p>
                         )}
                       </div>
@@ -153,7 +163,7 @@ export default function EventsPage() {
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
-                        Jump to map
+                        {t("jump_to_map", lang)}
                       </Link>
                     </div>
                   </div>

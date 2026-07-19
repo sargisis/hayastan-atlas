@@ -3,13 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import type { Era } from "@/lib/types";
+import { useLang, fmt } from "@/lib/lang";
 
 const MIN_YEAR = -800;
 const MAX_YEAR = 2025;
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
 
 function yearToPct(y: number) {
   return ((y - MIN_YEAR) / (MAX_YEAR - MIN_YEAR)) * 100;
@@ -23,6 +20,7 @@ interface Props {
 }
 
 export default function Timeline({ year, onChange }: Props) {
+  const { lang } = useLang();
   const { data: eras } = useSWR<Era[]>("/api/eras", fetcher);
   const [playing, setPlaying] = useState(false);
   const playRef = useRef<number | null>(null);
@@ -132,7 +130,7 @@ export default function Timeline({ year, onChange }: Props) {
                   width: `${Math.max(yearToPct(era.end_year) - yearToPct(era.start_year), 0.4)}%`,
                   backgroundColor: era.color,
                 }}
-                title={`${era.name} (${fmt(era.start_year)} – ${fmt(era.end_year)})`}
+                title={`${era.name} (${fmt(era.start_year, lang)} – ${fmt(era.end_year, lang)})`}
                 onClick={() => onChange(era.start_year)}
               />
             ))}
@@ -174,7 +172,7 @@ export default function Timeline({ year, onChange }: Props) {
             </button>
           </div>
 
-          <span className="text-stone-500 text-xs w-14 text-right shrink-0">{fmt(MIN_YEAR)}</span>
+          <span className="text-stone-500 text-xs w-14 text-right shrink-0">{fmt(MIN_YEAR, lang)}</span>
 
           <div className="relative flex-1">
             <input
@@ -188,11 +186,11 @@ export default function Timeline({ year, onChange }: Props) {
             />
           </div>
 
-          <span className="text-stone-500 text-xs w-14 shrink-0">{fmt(MAX_YEAR)}</span>
+          <span className="text-stone-500 text-xs w-14 shrink-0">{fmt(MAX_YEAR, lang)}</span>
 
           {/* Current year display */}
           <div className="shrink-0 w-24 text-right">
-            <span className="text-armenia-orange font-bold text-xl tabular-nums">{fmt(year)}</span>
+            <span className="text-armenia-orange font-bold text-xl tabular-nums">{fmt(year, lang)}</span>
           </div>
         </div>
 
@@ -204,7 +202,7 @@ export default function Timeline({ year, onChange }: Props) {
               onClick={() => onChange(y)}
               className="text-[10px] text-stone-600 hover:text-stone-300 transition-colors"
             >
-              {fmt(y)}
+              {fmt(y, lang)}
             </button>
           ))}
         </div>

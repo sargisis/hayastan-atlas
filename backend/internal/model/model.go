@@ -5,11 +5,13 @@ import "time"
 type Era struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
+	NameHY      string `json:"name_hy"`
 	StartYear   int    `json:"start_year"`
 	EndYear     int    `json:"end_year"`
 	Capital     string `json:"capital"`
 	Color       string `json:"color"`
-	Description string `json:"description"`
+	Description   string `json:"description"`
+	DescriptionHY string `json:"description_hy"`
 }
 
 type Territory struct {
@@ -36,17 +38,20 @@ type King struct {
 	ReignStart  int     `json:"reign_start"`
 	ReignEnd    *int    `json:"reign_end"`
 	Bio         string  `json:"bio"`
+	BioHY       string  `json:"bio_hy"`
 	PortraitURL *string `json:"portrait_url"`
 }
 
 type Event struct {
-	ID          int      `json:"id"`
-	EraID       *int     `json:"era_id"`
-	Year        int      `json:"year"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Lat         *float64 `json:"lat"`
-	Lng         *float64 `json:"lng"`
+	ID            int      `json:"id"`
+	EraID         *int     `json:"era_id"`
+	Year          int      `json:"year"`
+	Title         string   `json:"title"`
+	TitleHY       string   `json:"title_hy"`
+	Description   string   `json:"description"`
+	DescriptionHY string   `json:"description_hy"`
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
 }
 
 type City struct {

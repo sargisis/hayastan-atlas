@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import type { Event } from "@/lib/types";
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
+import { useLang, fmt, t } from "@/lib/lang";
 
 interface Props {
   events: Event[];
@@ -14,12 +11,13 @@ interface Props {
 }
 
 function EventList({ events, year, onJump }: Props) {
+  const { lang } = useLang();
   const nearby = events
     .filter((ev) => Math.abs(ev.year - year) <= 100)
     .sort((a, b) => Math.abs(a.year - year) - Math.abs(b.year - year))
     .slice(0, 6);
 
-  if (nearby.length === 0) return <div className="px-4 py-6 text-stone-500 text-sm text-center">No events nearby</div>;
+  if (nearby.length === 0) return <div className="px-4 py-6 text-stone-500 text-sm text-center">{t("no_events_nearby", lang)}</div>;
 
   return (
     <ul>
@@ -43,16 +41,18 @@ function EventList({ events, year, onJump }: Props) {
                     active ? "text-armenia-orange" : "text-stone-500"
                   }`}
                 >
-                  {fmt(ev.year)}
+                  {fmt(ev.year, lang)}
                 </span>
                 {active && (
                   <span className="w-1.5 h-1.5 rounded-full bg-armenia-orange animate-pulse" />
                 )}
               </div>
-              <div className="text-sm font-semibold text-stone-100 leading-snug">{ev.title}</div>
+              <div className="text-sm font-semibold text-stone-100 leading-snug">
+                {lang === "hy" && ev.title_hy ? ev.title_hy : ev.title}
+              </div>
               {ev.description && (
                 <div className="text-xs text-stone-400 mt-1 leading-relaxed line-clamp-2">
-                  {ev.description}
+                  {lang === "hy" && ev.description_hy ? ev.description_hy : ev.description}
                 </div>
               )}
             </button>
@@ -64,6 +64,7 @@ function EventList({ events, year, onJump }: Props) {
 }
 
 export default function EventsPanel({ events, year, onJump }: Props) {
+  const { lang } = useLang();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const nearby = events.filter((ev) => Math.abs(ev.year - year) <= 100);
@@ -76,7 +77,7 @@ export default function EventsPanel({ events, year, onJump }: Props) {
       <div className="anim-slide-right absolute top-4 right-4 w-80 max-h-[calc(100%-6rem)] overflow-y-auto rounded-xl bg-stone-950/85 backdrop-blur border border-stone-800 shadow-2xl z-10 hidden md:block">
         <div className="px-4 py-3 border-b border-stone-800/70 sticky top-0 bg-stone-950/95 backdrop-blur">
           <h3 className="text-xs font-semibold tracking-widest uppercase text-stone-400">
-            Events around {fmt(year)}
+            {t("events_around", lang)} {fmt(year, lang)}
           </h3>
         </div>
         <EventList events={events} year={year} onJump={onJump} />
@@ -101,7 +102,7 @@ export default function EventsPanel({ events, year, onJump }: Props) {
           <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-stone-950 border-t border-stone-800 rounded-t-2xl shadow-2xl max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800/70 shrink-0">
               <h3 className="text-xs font-semibold tracking-widest uppercase text-stone-400">
-                Events around {fmt(year)}
+                {t("events_around", lang)} {fmt(year, lang)}
               </h3>
               <button
                 onClick={() => setSheetOpen(false)}

@@ -1,11 +1,13 @@
 export interface Era {
   id: number;
   name: string;
+  name_hy: string;
   start_year: number;
   end_year: number;
   capital: string;
   color: string;
   description: string;
+  description_hy: string;
 }
 
 export interface King {
@@ -17,6 +19,7 @@ export interface King {
   reign_start: number;
   reign_end: number | null;
   bio: string;
+  bio_hy: string;
   portrait_url: string | null;
 }
 
@@ -25,7 +28,9 @@ export interface Event {
   era_id: number | null;
   year: number;
   title: string;
+  title_hy: string;
   description: string;
+  description_hy: string;
   lat: number | null;
   lng: number | null;
 }

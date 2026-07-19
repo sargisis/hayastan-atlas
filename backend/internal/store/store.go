@@ -18,7 +18,7 @@ func New(db *pgxpool.Pool) *Store {
 
 func (s *Store) ListEras(ctx context.Context) ([]model.Era, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, name, start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
+		SELECT id, name, COALESCE(name_hy,''), start_year, end_year, COALESCE(capital,''), color, COALESCE(description,''), COALESCE(description_hy,'')
 		FROM eras ORDER BY start_year`)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (s *Store) ListEras(ctx context.Context) ([]model.Era, error) {
 	var eras []model.Era
 	for rows.Next() {
 		var e model.Era
-		if err := rows.Scan(&e.ID, &e.Name, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description); err != nil {
+		if err := rows.Scan(&e.ID, &e.Name, &e.NameHY, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description, &e.DescriptionHY); err != nil {
 			return nil, err
 		}
 		eras = append(eras, e)
@@ -92,7 +92,7 @@ func (s *Store) ListCitiesForYear(ctx context.Context, year int) ([]model.City, 
 func (s *Store) ListKings(ctx context.Context) ([]model.King, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT k.id, k.dynasty_id, d.name, k.name, COALESCE(k.name_hy,''),
-		       k.reign_start, k.reign_end, COALESCE(k.bio,''), k.portrait_url
+		       k.reign_start, k.reign_end, COALESCE(k.bio,''), COALESCE(k.bio_hy,''), k.portrait_url
 		FROM kings k
 		JOIN dynasties d ON d.id = k.dynasty_id
 		ORDER BY k.reign_start`)
@@ -105,7 +105,7 @@ func (s *Store) ListKings(ctx context.Context) ([]model.King, error) {
 	for rows.Next() {
 		var k model.King
 		if err := rows.Scan(&k.ID, &k.DynastyID, &k.DynastyName, &k.Name, &k.NameHY,
-			&k.ReignStart, &k.ReignEnd, &k.Bio, &k.PortraitURL); err != nil {
+			&k.ReignStart, &k.ReignEnd, &k.Bio, &k.BioHY, &k.PortraitURL); err != nil {
 			return nil, err
 		}
 		kings = append(kings, k)
@@ -117,12 +117,12 @@ func (s *Store) GetKing(ctx context.Context, id int) (*model.King, error) {
 	var k model.King
 	err := s.db.QueryRow(ctx, `
 		SELECT k.id, k.dynasty_id, d.name, k.name, COALESCE(k.name_hy,''),
-		       k.reign_start, k.reign_end, COALESCE(k.bio,''), k.portrait_url
+		       k.reign_start, k.reign_end, COALESCE(k.bio,''), COALESCE(k.bio_hy,''), k.portrait_url
 		FROM kings k
 		JOIN dynasties d ON d.id = k.dynasty_id
 		WHERE k.id=$1`, id,
 	).Scan(&k.ID, &k.DynastyID, &k.DynastyName, &k.Name, &k.NameHY,
-		&k.ReignStart, &k.ReignEnd, &k.Bio, &k.PortraitURL)
+		&k.ReignStart, &k.ReignEnd, &k.Bio, &k.BioHY, &k.PortraitURL)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (s *Store) GetKing(ctx context.Context, id int) (*model.King, error) {
 
 func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, era_id, year, title, COALESCE(description,''), lat, lng
+		SELECT id, era_id, year, title, COALESCE(title_hy,''), COALESCE(description,''), COALESCE(description_hy,''), lat, lng
 		FROM events WHERE year <= $1
 		ORDER BY year`, year)
 	if err != nil {
@@ -142,7 +142,7 @@ func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, 
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.Description, &e.Lat, &e.Lng); err != nil {
+		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.TitleHY, &e.Description, &e.DescriptionHY, &e.Lat, &e.Lng); err != nil {
 			return nil, err
 		}
 		events = append(events, e)
@@ -154,12 +154,12 @@ func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, 
 func (s *Store) GetEraForYear(ctx context.Context, year int) (*model.Era, error) {
 	var e model.Era
 	err := s.db.QueryRow(ctx, `
-		SELECT id, name, start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
+		SELECT id, name, COALESCE(name_hy,''), start_year, end_year, COALESCE(capital,''), color, COALESCE(description,''), COALESCE(description_hy,'')
 		FROM eras
 		WHERE start_year <= $1 AND end_year >= $1
 		ORDER BY start_year DESC
 		LIMIT 1`, year,
-	).Scan(&e.ID, &e.Name, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description)
+	).Scan(&e.ID, &e.Name, &e.NameHY, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description, &e.DescriptionHY)
 	if err != nil {
 		return nil, err
 	}

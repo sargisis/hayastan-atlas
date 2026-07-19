@@ -7,6 +7,7 @@ import useSWR from "swr";
 import type { User } from "@/lib/types";
 import SearchModal from "./SearchModal";
 import LangToggle from "./LangToggle";
+import { useLang, t } from "@/lib/lang";
 
 const fetcher = (url: string) =>
   fetch(url, { credentials: "include" }).then((r) => {
@@ -18,6 +19,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: user } = useSWR<User | null>("/api/me", fetcher);
+  const { lang } = useLang();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -56,10 +58,10 @@ export default function Navbar() {
         <span className="text-stone-400 text-sm font-light tracking-widest uppercase">Atlas</span>
       </Link>
 
-      {navLink("/map", "Map")}
-      {navLink("/kings", "Kings")}
-      {navLink("/events", "Events")}
-      {navLink("/bookmarks", "Bookmarks")}
+      {navLink("/map", t("map", lang))}
+      {navLink("/kings", t("kings", lang))}
+      {navLink("/events", t("events", lang))}
+      {navLink("/bookmarks", t("bookmarks", lang))}
 
       {/* Search button */}
       <button
@@ -69,7 +71,7 @@ export default function Navbar() {
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
         </svg>
-        <span className="hidden sm:block">Search</span>
+        <span className="hidden sm:block">{t("search", lang)}</span>
         <kbd className="hidden sm:block text-[10px] text-stone-600 border border-stone-700 rounded px-1 py-0.5">⌘K</kbd>
       </button>
 
