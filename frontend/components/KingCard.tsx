@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import type { King } from "@/lib/types";
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
+import { useLang, fmt } from "@/lib/lang";
 
 interface Props {
   king: King;
@@ -16,6 +13,7 @@ interface Props {
 }
 
 export default function KingCard({ king, color, dynastyStart, dynastyEnd, index }: Props) {
+  const { lang } = useLang();
   const reignEnd = king.reign_end ?? king.reign_start + 5;
   const span = Math.max(dynastyEnd - dynastyStart, 1);
   const left = Math.max(((king.reign_start - dynastyStart) / span) * 100, 0);
@@ -41,10 +39,12 @@ export default function KingCard({ king, color, dynastyStart, dynastyEnd, index 
           ♔
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-white leading-tight text-[15px]">{king.name}</h3>
-          {king.name_hy && <p className="text-stone-400 text-sm mt-0.5">{king.name_hy}</p>}
+          <h3 className="font-bold text-white leading-tight text-[15px]">
+            {lang === "hy" && king.name_hy ? king.name_hy : king.name}
+          </h3>
+          {lang === "en" && king.name_hy && <p className="text-stone-400 text-sm mt-0.5">{king.name_hy}</p>}
           <p className="text-xs mt-1 font-semibold tabular-nums" style={{ color }}>
-            {fmt(king.reign_start)} – {king.reign_end != null ? fmt(king.reign_end) : "?"}
+            {fmt(king.reign_start, lang)} – {king.reign_end != null ? fmt(king.reign_end, lang) : "?"}
             <span className="text-stone-500 font-normal ml-2">{reignYears} yrs</span>
           </p>
         </div>
@@ -63,8 +63,8 @@ export default function KingCard({ king, color, dynastyStart, dynastyEnd, index 
           />
         </div>
         <div className="flex justify-between text-[10px] text-stone-600 mt-1">
-          <span>{fmt(dynastyStart)}</span>
-          <span>{fmt(dynastyEnd)}</span>
+          <span>{fmt(dynastyStart, lang)}</span>
+          <span>{fmt(dynastyEnd, lang)}</span>
         </div>
       </div>
 

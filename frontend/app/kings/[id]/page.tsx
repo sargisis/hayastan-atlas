@@ -4,12 +4,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import type { King } from "@/lib/types";
+import { useLang, fmt } from "@/lib/lang";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
 
 const DYNASTY_COLORS: Record<string, string> = {
   Urartian: "#8e5bb5",
@@ -23,6 +20,7 @@ const DYNASTY_COLORS: Record<string, string> = {
 
 export default function KingPage() {
   const { id } = useParams<{ id: string }>();
+  const { lang } = useLang();
   const { data: king, isLoading } = useSWR<King>(`/api/kings/${id}`, fetcher);
 
   if (isLoading) {
@@ -88,8 +86,10 @@ export default function KingPage() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-white leading-tight">{king.name}</h1>
-              {king.name_hy && (
+              <h1 className="text-3xl font-bold text-white leading-tight">
+                {lang === "hy" && king.name_hy ? king.name_hy : king.name}
+              </h1>
+              {lang === "en" && king.name_hy && (
                 <p className="text-stone-400 text-lg mt-1">{king.name_hy}</p>
               )}
               <div className="flex items-center gap-4 mt-3 flex-wrap">
@@ -100,7 +100,7 @@ export default function KingPage() {
                   {king.dynasty_name} Dynasty
                 </span>
                 <span className="text-stone-400 text-sm tabular-nums">
-                  {fmt(king.reign_start)} – {reignEnd != null ? fmt(reignEnd) : "unknown"}
+                  {fmt(king.reign_start, lang)} – {reignEnd != null ? fmt(reignEnd, lang) : "unknown"}
                   {reignYears != null && (
                     <span className="text-stone-600 ml-2">({reignYears} years)</span>
                   )}
@@ -125,7 +125,7 @@ export default function KingPage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          View on map — {fmt(king.reign_start)}
+          View on map — {fmt(king.reign_start, lang)}
         </Link>
 
         {reignEnd != null && (
@@ -144,8 +144,8 @@ export default function KingPage() {
         style={{ animationDelay: "150ms" }}
       >
         {[
-          { label: "Reign start", value: fmt(king.reign_start) },
-          { label: "Reign end", value: reignEnd != null ? fmt(reignEnd) : "—" },
+          { label: "Reign start", value: fmt(king.reign_start, lang) },
+          { label: "Reign end", value: reignEnd != null ? fmt(reignEnd, lang) : "—" },
           { label: "Duration", value: reignYears != null ? `${reignYears} yrs` : "—" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-stone-900 border border-stone-800 rounded-xl p-4 text-center">
