@@ -99,19 +99,23 @@ export default function EventsPage() {
           const eraEvents = byEra[eraId].slice().sort((a, b) => a.year - b.year);
           return (
             <section key={eraId}>
-              {era && (
-                <div
-                  className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-800"
-                  style={{ borderLeftColor: era.color }}
-                >
-                  <div className="w-2.5 h-6 rounded-sm shrink-0" style={{ backgroundColor: era.color }} />
-                  <h2 className="text-lg font-bold text-white">{era.name}</h2>
-                  <span className="text-stone-500 text-sm tabular-nums">
-                    {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
-                  </span>
-                  <span className="ml-auto text-stone-600 text-xs">{eraEvents.length} events</span>
-                </div>
-              )}
+              <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-800">
+                {era ? (
+                  <>
+                    <div className="w-2.5 h-6 rounded-sm shrink-0" style={{ backgroundColor: era.color }} />
+                    <h2 className="text-lg font-bold text-white">{era.name}</h2>
+                    <span className="text-stone-500 text-sm tabular-nums">
+                      {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2.5 h-6 rounded-sm shrink-0 bg-stone-600" />
+                    <h2 className="text-lg font-bold text-stone-400">Other Events</h2>
+                  </>
+                )}
+                <span className="ml-auto text-stone-600 text-xs">{eraEvents.length} events</span>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {eraEvents.map((ev, i) => (
                   <div

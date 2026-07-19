@@ -4,12 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import type { King, Event } from "@/lib/types";
+import { useLang, fmt } from "@/lib/lang";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
 
 interface Props {
   open: boolean;
@@ -17,12 +14,13 @@ interface Props {
 }
 
 export default function SearchModal({ open, onClose }: Props) {
+  const { lang } = useLang();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const { data: kings } = useSWR<King[]>("/api/kings", fetcher);
-  const { data: events } = useSWR<Event[]>("/api/events?year=0", fetcher);
+  const { data: events } = useSWR<Event[]>("/api/events?year=9999", fetcher);
 
   useEffect(() => {
     if (open) {
@@ -123,7 +121,7 @@ export default function SearchModal({ open, onClose }: Props) {
                   <div className="min-w-0">
                     <div className="text-white text-sm font-medium truncate">{k.name}</div>
                     <div className="text-stone-500 text-xs">
-                      {k.dynasty_name} · {fmt(k.reign_start)} – {k.reign_end != null ? fmt(k.reign_end) : "?"}
+                      {k.dynasty_name} · {fmt(k.reign_start, lang)} – {k.reign_end != null ? fmt(k.reign_end, lang) : "?"}
                     </div>
                   </div>
                   <span className="ml-auto text-stone-600 text-xs shrink-0">ruler</span>
@@ -144,7 +142,7 @@ export default function SearchModal({ open, onClose }: Props) {
                   <span className="text-stone-400 text-lg">⚡</span>
                   <div className="min-w-0">
                     <div className="text-white text-sm font-medium truncate">{e.title}</div>
-                    <div className="text-stone-500 text-xs">{fmt(e.year)}</div>
+                    <div className="text-stone-500 text-xs">{fmt(e.year, lang)}</div>
                   </div>
                   <span className="ml-auto text-stone-600 text-xs shrink-0">event</span>
                 </button>

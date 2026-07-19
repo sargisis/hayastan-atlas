@@ -1,10 +1,7 @@
 "use client";
 
 import type { Era, King } from "@/lib/types";
-
-function fmt(y: number) {
-  return y < 0 ? `${Math.abs(y)} BC` : `${y} AD`;
-}
+import { useLang, fmt } from "@/lib/lang";
 
 interface Props {
   era: Era | null;
@@ -13,6 +10,7 @@ interface Props {
 }
 
 export default function EraPanel({ era, year, kings }: Props) {
+  const { lang } = useLang();
   if (!era) {
     return (
       <div className="h-16 bg-stone-900/90 border-b border-stone-800 flex items-center px-6 text-stone-500 text-sm">
@@ -41,7 +39,7 @@ export default function EraPanel({ era, year, kings }: Props) {
         <div className="flex items-baseline gap-2 md:gap-3 flex-wrap">
           <span className="font-bold text-white text-base md:text-lg leading-tight">{era.name}</span>
           <span className="text-stone-400 text-xs md:text-sm">
-            {fmt(era.start_year)} – {fmt(era.end_year)}
+            {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
           </span>
           {era.capital && (
             <span className="hidden md:inline text-stone-500 text-sm">
@@ -52,9 +50,9 @@ export default function EraPanel({ era, year, kings }: Props) {
             <span className="text-stone-500 text-xs md:text-sm">
               ♔{" "}
               <span className="text-armenia-orange font-medium">
-                {rulers.map((r) => r.name).join(", ")}
+                {rulers.map((r) => lang === "hy" && r.name_hy ? r.name_hy : r.name).join(", ")}
               </span>
-              {rulers[0]?.name_hy && (
+              {lang === "en" && rulers[0]?.name_hy && (
                 <span className="hidden md:inline text-stone-500 ml-1">({rulers[0].name_hy})</span>
               )}
             </span>
@@ -67,7 +65,7 @@ export default function EraPanel({ era, year, kings }: Props) {
 
       <div className="md:ml-auto relative shrink-0 md:text-right">
         <div className="font-bold text-lg md:text-2xl tabular-nums" style={{ color: era.color }}>
-          {fmt(year)}
+          {fmt(year, lang)}
         </div>
       </div>
     </div>
