@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import type { King, Event } from "@/lib/types";
-import { useLang, fmt } from "@/lib/lang";
+import { useLang, fmt, t } from "@/lib/lang";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -92,7 +92,7 @@ export default function SearchModal({ open, onClose }: Props) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search rulers, events…"
+            placeholder={t("search_placeholder", lang)}
             className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none"
           />
           <kbd className="hidden sm:block text-xs text-stone-600 border border-stone-700 rounded px-1.5 py-0.5">Esc</kbd>
@@ -101,16 +101,16 @@ export default function SearchModal({ open, onClose }: Props) {
         {/* Results */}
         <div className="max-h-96 overflow-y-auto">
           {q.length < 2 && (
-            <p className="text-stone-600 text-sm text-center py-8">Type at least 2 characters…</p>
+            <p className="text-stone-600 text-sm text-center py-8">{t("type_to_search", lang)}</p>
           )}
 
           {q.length >= 2 && total === 0 && (
-            <p className="text-stone-500 text-sm text-center py-8">No results for "{query}"</p>
+            <p className="text-stone-500 text-sm text-center py-8">{t("no_results", lang)} "{query}"</p>
           )}
 
           {matchedKings.length > 0 && (
             <div>
-              <div className="px-4 py-2 text-[10px] uppercase tracking-widest text-stone-600">Rulers</div>
+              <div className="px-4 py-2 text-[10px] uppercase tracking-widest text-stone-600">{t("rulers", lang)}</div>
               {matchedKings.map((k) => (
                 <button
                   key={k.id}
@@ -124,7 +124,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       {k.dynasty_name} · {fmt(k.reign_start, lang)} – {k.reign_end != null ? fmt(k.reign_end, lang) : "?"}
                     </div>
                   </div>
-                  <span className="ml-auto text-stone-600 text-xs shrink-0">ruler</span>
+                  <span className="ml-auto text-stone-600 text-xs shrink-0">{t("ruler", lang)}</span>
                 </button>
               ))}
             </div>
@@ -144,7 +144,7 @@ export default function SearchModal({ open, onClose }: Props) {
                     <div className="text-white text-sm font-medium truncate">{e.title}</div>
                     <div className="text-stone-500 text-xs">{fmt(e.year, lang)}</div>
                   </div>
-                  <span className="ml-auto text-stone-600 text-xs shrink-0">event</span>
+                  <span className="ml-auto text-stone-600 text-xs shrink-0">{t("event", lang)}</span>
                 </button>
               ))}
             </div>
@@ -153,8 +153,8 @@ export default function SearchModal({ open, onClose }: Props) {
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-stone-800 flex gap-4 text-[11px] text-stone-600">
-          <span>↵ to navigate</span>
-          <span>Esc to close</span>
+          <span>{t("enter_to_navigate", lang)}</span>
+          <span>{t("esc_to_close", lang)}</span>
         </div>
       </div>
     </div>

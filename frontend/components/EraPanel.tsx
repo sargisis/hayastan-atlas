@@ -1,7 +1,7 @@
 "use client";
 
 import type { Era, King } from "@/lib/types";
-import { useLang, fmt } from "@/lib/lang";
+import { useLang, fmt, t } from "@/lib/lang";
 
 interface Props {
   era: Era | null;
@@ -14,7 +14,7 @@ export default function EraPanel({ era, year, kings }: Props) {
   if (!era) {
     return (
       <div className="h-16 bg-stone-900/90 border-b border-stone-800 flex items-center px-6 text-stone-500 text-sm">
-        Move the timeline to explore Armenian history
+        {t("move_timeline", lang)}
       </div>
     );
   }
@@ -43,7 +43,7 @@ export default function EraPanel({ era, year, kings }: Props) {
           </span>
           {era.capital && (
             <span className="hidden md:inline text-stone-500 text-sm">
-              Capital: <span className="text-stone-300">{era.capital}</span>
+              {t("capital", lang)}: <span className="text-stone-300">{era.capital}</span>
             </span>
           )}
           {rulers.length > 0 && (
