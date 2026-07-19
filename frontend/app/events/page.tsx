@@ -145,10 +145,12 @@ export default function EventsPage() {
                         {fmt(ev.year, lang)}
                       </span>
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-stone-100 leading-snug">{ev.title}</div>
+                        <div className="text-sm font-semibold text-stone-100 leading-snug">
+                          {lang === "hy" && ev.title_hy ? ev.title_hy : ev.title}
+                        </div>
                         {ev.description && (
                           <p className="text-xs text-stone-400 mt-1.5 leading-relaxed line-clamp-3">
-                            {ev.description}
+                            {lang === "hy" && ev.description_hy ? ev.description_hy : ev.description}
                           </p>
                         )}
                       </div>

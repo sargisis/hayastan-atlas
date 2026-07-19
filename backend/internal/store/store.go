@@ -131,7 +131,7 @@ func (s *Store) GetKing(ctx context.Context, id int) (*model.King, error) {
 
 func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, era_id, year, title, COALESCE(description,''), lat, lng
+		SELECT id, era_id, year, title, COALESCE(title_hy,''), COALESCE(description,''), COALESCE(description_hy,''), lat, lng
 		FROM events WHERE year <= $1
 		ORDER BY year`, year)
 	if err != nil {
@@ -142,7 +142,7 @@ func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, 
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.Description, &e.Lat, &e.Lng); err != nil {
+		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.TitleHY, &e.Description, &e.DescriptionHY, &e.Lat, &e.Lng); err != nil {
 			return nil, err
 		}
 		events = append(events, e)
@@ -154,12 +154,12 @@ func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, 
 func (s *Store) GetEraForYear(ctx context.Context, year int) (*model.Era, error) {
 	var e model.Era
 	err := s.db.QueryRow(ctx, `
-		SELECT id, name, start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
+		SELECT id, name, COALESCE(name_hy,''), start_year, end_year, COALESCE(capital,''), color, COALESCE(description,'')
 		FROM eras
 		WHERE start_year <= $1 AND end_year >= $1
 		ORDER BY start_year DESC
 		LIMIT 1`, year,
-	).Scan(&e.ID, &e.Name, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description)
+	).Scan(&e.ID, &e.Name, &e.NameHY, &e.StartYear, &e.EndYear, &e.Capital, &e.Color, &e.Description)
 	if err != nil {
 		return nil, err
 	}

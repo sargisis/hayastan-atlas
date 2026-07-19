@@ -141,7 +141,9 @@ export default function SearchModal({ open, onClose }: Props) {
                 >
                   <span className="text-stone-400 text-lg">⚡</span>
                   <div className="min-w-0">
-                    <div className="text-white text-sm font-medium truncate">{e.title}</div>
+                    <div className="text-white text-sm font-medium truncate">
+                      {lang === "hy" && e.title_hy ? e.title_hy : e.title}
+                    </div>
                     <div className="text-stone-500 text-xs">{fmt(e.year, lang)}</div>
                   </div>
                   <span className="ml-auto text-stone-600 text-xs shrink-0">{t("event", lang)}</span>

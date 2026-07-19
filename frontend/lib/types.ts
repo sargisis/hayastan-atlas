@@ -26,7 +26,9 @@ export interface Event {
   era_id: number | null;
   year: number;
   title: string;
+  title_hy: string;
   description: string;
+  description_hy: string;
   lat: number | null;
   lng: number | null;
 }

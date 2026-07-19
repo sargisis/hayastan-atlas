@@ -41,13 +41,15 @@ type King struct {
 }
 
 type Event struct {
-	ID          int      `json:"id"`
-	EraID       *int     `json:"era_id"`
-	Year        int      `json:"year"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Lat         *float64 `json:"lat"`
-	Lng         *float64 `json:"lng"`
+	ID            int      `json:"id"`
+	EraID         *int     `json:"era_id"`
+	Year          int      `json:"year"`
+	Title         string   `json:"title"`
+	TitleHY       string   `json:"title_hy"`
+	Description   string   `json:"description"`
+	DescriptionHY string   `json:"description_hy"`
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
 }
 
 type City struct {
