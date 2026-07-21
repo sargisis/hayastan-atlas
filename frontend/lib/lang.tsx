@@ -85,6 +85,21 @@ const translations: Record<string, Record<Lang, string>> = {
   yrs: { en: "yrs", hy: "տ." },
   map_at: { en: "Map at", hy: "Քարտեզ" },
   reign_disclaimer: { en: "Reign dates are based on scholarly consensus; some early dates are approximate.", hy: "Թագավորության ամսաթվերը հիմնված են գիտական կոնսենսուսի վրա, որոշ վաղ ամսաթվեր մոտավոր են։" },
+  // Compare page
+  compare: { en: "Compare", hy: "Համեմատել" },
+  compare_title: { en: "Compare Two Eras", hy: "Համեմատել Երկու Դարաշրջան" },
+  compare_subtitle: { en: "Place two years side by side to see how Armenia's territory changed.", hy: "Կողք կողքի դրեք երկու տարի՝ տեսնելու Հայաստանի տարածքի փոփոխությունը։" },
+  // King detail page
+  all_rulers: { en: "All rulers", hy: "Բոլոր կառավարիչները" },
+  view_on_map: { en: "View on map", hy: "Տեսնել քարտեզում" },
+  mid_reign_map: { en: "Mid-reign map", hy: "Կեսի քարտեզ" },
+  reign_start_label: { en: "Reign start", hy: "Սկիզբ" },
+  reign_end_label: { en: "Reign end", hy: "Ավարտ" },
+  duration_label: { en: "Duration", hy: "Տևողություն" },
+  years_abbr: { en: "yrs", hy: "տ." },
+  unknown: { en: "unknown", hy: "անհայտ" },
+  related_events: { en: "Events during this reign", hy: "Թագավորության ժամանակ տեղի ունեցած իրադարձություններ" },
+  no_related_events: { en: "No recorded events for this period.", hy: "Այս ժամանակաշրջանի համար գրանցված իրադարձություններ չկան։" },
 };
 
 export function t(key: string, lang: Lang): string {

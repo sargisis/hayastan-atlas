@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import type { Era, Event } from "@/lib/types";
 import { useLang, fmt, t } from "@/lib/lang";
@@ -10,9 +11,18 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function EventsPage() {
   const { lang } = useLang();
+  const router = useRouter();
   const { data: eras } = useSWR<Era[]>("/api/eras", fetcher);
   const { data: events, isLoading } = useSWR<Event[]>("/api/events?year=9999", fetcher);
   const [activeEra, setActiveEra] = useState<number | null>(null);
+  const [discoverEv, setDiscoverEv] = useState<Event | null>(null);
+
+  const discover = useCallback(() => {
+    const pool = (events ?? []).filter((e) => e.description && e.description.length > 30);
+    if (!pool.length) return;
+    const ev = pool[Math.floor(Math.random() * pool.length)];
+    setDiscoverEv(ev);
+  }, [events]);
 
   if (isLoading || !eras) {
     return (
@@ -59,7 +69,55 @@ export default function EventsPage() {
         <p className="text-stone-400 mt-3 max-w-2xl mx-auto leading-relaxed">
           {t("events_subtitle", lang)}
         </p>
+        <button
+          onClick={discover}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-300 hover:text-white text-sm font-medium transition-all"
+        >
+          🎲 {lang === "hy" ? "Պատահական Իրադ." : "Discover Random Event"}
+        </button>
       </div>
+
+      {/* Discover modal */}
+      {discoverEv && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setDiscoverEv(null)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div
+            className="relative max-w-md w-full bg-stone-900 border border-stone-700 rounded-2xl shadow-2xl p-6 anim-fade"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-xs text-armenia-orange font-bold tracking-widest mb-2">{fmt(discoverEv.year, lang)}</div>
+            <h2 className="text-xl font-bold text-white mb-3">
+              {lang === "hy" && discoverEv.title_hy ? discoverEv.title_hy : discoverEv.title}
+            </h2>
+            {discoverEv.description && (
+              <p className="text-stone-300 text-sm leading-relaxed mb-5">
+                {lang === "hy" && discoverEv.description_hy ? discoverEv.description_hy : discoverEv.description}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <Link
+                href={`/map?year=${discoverEv.year}`}
+                onClick={() => setDiscoverEv(null)}
+                className="flex-1 py-2.5 rounded-xl bg-armenia-red text-white text-sm font-semibold text-center hover:opacity-90 transition-opacity"
+              >
+                {lang === "hy" ? "Տեսնել Քարտեզում" : "View on Map"}
+              </Link>
+              <button
+                onClick={discover}
+                className="px-4 py-2.5 rounded-xl border border-stone-700 text-stone-400 hover:text-white text-sm font-medium transition-colors"
+              >
+                🎲 {lang === "hy" ? "ԵՒս մեկ" : "Another"}
+              </button>
+              <button
+                onClick={() => setDiscoverEv(null)}
+                className="px-4 py-2.5 rounded-xl border border-stone-700 text-stone-400 hover:text-white text-sm transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Era filter tabs */}
       <div className="flex flex-wrap gap-2 mb-8">

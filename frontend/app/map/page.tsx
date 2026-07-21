@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import ShareButton from "@/components/ShareButton";
+import ExportButton from "@/components/ExportButton";
 import useSWR from "swr";
 import Timeline from "@/components/Timeline";
 import EraPanel from "@/components/EraPanel";
 import EventsPanel from "@/components/EventsPanel";
 import type { Era, Event, King } from "@/lib/types";
+import { useLang, fmt } from "@/lib/lang";
+import Link from "next/link";
 
-// MapLibre must be client-only (it accesses window)
 const HistoryMap = dynamic(() => import("@/components/HistoryMap"), { ssr: false });
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -22,47 +24,70 @@ function initialYear(): number {
       if (!Number.isNaN(n)) return Math.max(-800, Math.min(2025, n));
     }
   }
-  return -782; // Erebuni / Urartu as default
+  return -782;
+}
+
+// Era-transition "History Pulse" toast — appears briefly when era changes
+function HistoryPulse({ era }: { era: Era | null }) {
+  const { lang } = useLang();
+  if (!era) return null;
+  return (
+    <div
+      key={era.id}
+      className="anim-fade absolute bottom-28 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+    >
+      <div
+        className="px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-2xl backdrop-blur border"
+        style={{ backgroundColor: era.color + "cc", borderColor: era.color }}
+      >
+        {lang === "hy" && era.name_hy ? era.name_hy : era.name}
+        <span className="ml-2 opacity-70 font-normal text-xs">
+          {fmt(era.start_year, lang)} – {fmt(era.end_year, lang)}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export default function MapPage() {
   const [year, setYear] = useState<number>(initialYear);
   const [era, setEra] = useState<Era | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const [phaseLabel, setPhaseLabel] = useState<string>("");
+  const lastEraId = useRef<number | null>(null);
+  const [pulseEra, setPulseEra] = useState<Era | null>(null);
   const { data: kings } = useSWR<King[]>("/api/kings", fetcher);
 
-  const handleTimelineChange = useCallback((y: number) => {
-    setYear(y);
+  const handleTimelineChange = useCallback((y: number) => setYear(y), []);
+
+  const handleEraLoad = useCallback((newEra: Era) => {
+    setEra(newEra);
+    if (newEra.id !== lastEraId.current) {
+      lastEraId.current = newEra.id;
+      setPulseEra(newEra);
+      // Clear after animation
+      setTimeout(() => setPulseEra(null), 2800);
+    }
   }, []);
 
   return (
     <div className="flex flex-col flex-1 h-[calc(100vh-56px)]">
-      {/* Top: era info panel */}
       <EraPanel era={era} year={year} kings={kings} />
 
-      {/* Map takes remaining space */}
       <div className="flex-1 relative min-h-0">
         <HistoryMap
           year={year}
-          onEraLoad={setEra}
+          onEraLoad={handleEraLoad}
           onEventsLoad={setEvents}
-          onPhaseLoad={setPhaseLabel}
         />
-        {phaseLabel && (
-          <div
-            key={phaseLabel}
-            className="anim-fade absolute top-4 left-4 z-10 px-4 py-2 rounded-lg bg-stone-950/80 backdrop-blur border border-stone-800 shadow-xl"
-          >
-            <div className="text-[10px] uppercase tracking-widest text-stone-500">Period</div>
-            <div className="text-sm font-semibold text-stone-100">{phaseLabel}</div>
-          </div>
-        )}
+
+        {/* Era-change pulse toast */}
+        {pulseEra && <HistoryPulse era={pulseEra} />}
+
         <EventsPanel events={events} year={year} onJump={handleTimelineChange} />
         <ShareButton year={year} />
+        <ExportButton year={year} />
       </div>
 
-      {/* Bottom timeline */}
       <Timeline year={year} onChange={handleTimelineChange} />
     </div>
   );
