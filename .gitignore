@@ -6,6 +6,9 @@ frontend/.env.local
 # Backend
 backend/.env
 backend/bin/
+backend/*.exe
+backend/*.exe~
+backend/server
 
 # Environment secrets
 .env
