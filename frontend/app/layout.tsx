@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import { LangProvider } from "@/lib/lang";
 
 export const metadata: Metadata = {
@@ -14,7 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-stone-950 text-stone-100 min-h-screen flex flex-col">
         <LangProvider>
           <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
+          <main className="flex-1 flex flex-col pb-16 md:pb-0">{children}</main>
+          <KeyboardShortcuts />
         </LangProvider>
       </body>
     </html>

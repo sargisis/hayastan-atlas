@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { Era, Event, TimelineResponse } from "@/lib/types";
-import { useLang } from "@/lib/lang";
+import { useLang, fmt } from "@/lib/lang";
 import { featureNameHY, phaseLabelHY } from "@/lib/mapTranslations";
 
 interface Props {
@@ -228,6 +228,42 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         },
       });
 
+      // --- Event pins ---
+      map.addSource("events", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "event-pins",
+        type: "circle",
+        source: "events",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#F2A800",
+          "circle-stroke-color": "#000",
+          "circle-stroke-width": 1.5,
+          "circle-opacity": 0.9,
+        },
+      });
+      map.addLayer({
+        id: "event-pin-labels",
+        type: "symbol",
+        source: "events",
+        layout: {
+          "text-field": ["get", "label"],
+          "text-size": 10,
+          "text-font": ["Open Sans Regular"],
+          "text-offset": [0, 1.4],
+          "text-anchor": "top",
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": "#F2A800",
+          "text-halo-color": "#000",
+          "text-halo-width": 1.2,
+        },
+      });
+
       // --- State name labels ---
       map.addLayer({
         id: "territory-labels",
@@ -258,6 +294,33 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         },
       });
 
+      // --- Event pin click popup ---
+      const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px", className: "map-event-popup" });
+
+      map.on("click", "event-pins", (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        const props = feature.properties as { title: string; title_hy?: string; description?: string; description_hy?: string; year: number };
+        const coords = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
+        const currentLang = (map as any)._currentLang as string ?? "en";
+        const title = currentLang === "hy" && props.title_hy ? props.title_hy : props.title;
+        const desc = currentLang === "hy" && props.description_hy ? props.description_hy : (props.description ?? "");
+        const yearStr = props.year < 0 ? `${Math.abs(props.year)} BC` : `${props.year} AD`;
+        popup
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="font-family:sans-serif;color:#e7e5e4;background:#1c1917;padding:10px 12px;border-radius:8px;border:1px solid #44403c">` +
+            `<div style="font-size:10px;color:#F2A800;font-weight:700;letter-spacing:.08em;margin-bottom:4px">${yearStr}</div>` +
+            `<div style="font-size:13px;font-weight:600;margin-bottom:${desc ? "6px" : "0"}">${title}</div>` +
+            (desc ? `<div style="font-size:11px;color:#a8a29e;line-height:1.5">${desc}</div>` : "") +
+            `</div>`
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "event-pins", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "event-pins", () => { map.getCanvas().style.cursor = ""; });
+
       setStyleReady(true);
     });
 
@@ -277,6 +340,8 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
     map.setLayoutProperty("city-labels", "text-field", nameField);
     map.setLayoutProperty("territory-labels", "text-field", nameField);
     map.setLayoutProperty("arrow-label", "text-field", nameField);
+    // store lang on map for popup handler
+    (map as any)._currentLang = lang;
   }, [lang, styleReady]);
 
   // Update era info, events list, and territory phase when year changes
@@ -288,12 +353,32 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
     async function load() {
       try {
-        // Era + events (for the panels)
+        // Era + events (for the panels and map pins)
         const res = await fetch(`/api/timeline?year=${year}`, { signal: controller.signal });
         if (res.ok) {
           const data: TimelineResponse = await res.json();
           onEraLoad(data.era);
           onEventsLoad(data.events);
+
+          // Update event pins on the map (only events with coordinates)
+          const eventSource = map!.getSource("events") as maplibregl.GeoJSONSource | undefined;
+          eventSource?.setData({
+            type: "FeatureCollection",
+            features: data.events
+              .filter((ev) => ev.lat != null && ev.lng != null)
+              .map((ev) => ({
+                type: "Feature" as const,
+                properties: {
+                  title: ev.title,
+                  title_hy: ev.title_hy,
+                  description: ev.description,
+                  description_hy: ev.description_hy,
+                  year: ev.year,
+                  label: fmt(ev.year, "en"),
+                },
+                geometry: { type: "Point" as const, coordinates: [ev.lng!, ev.lat!] },
+              })),
+          });
         }
 
         // Cities existing at this year
@@ -368,5 +453,176 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
     return () => controller.abort();
   }, [year, lang, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />;
+  return (
+    <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />
+      {styleReady && <MapControls mapRef={mapRef} containerRef={containerRef} lang={lang} />}
+    </div>
+  );
+}
+
+// Layer visibility state
+const LAYERS = [
+  { id: "cities", ids: ["city-dots", "city-stars", "city-labels"], labelEn: "Cities", labelHy: "Քաղաքներ", icon: "🏙️" },
+  { id: "events", ids: ["event-pins", "event-pin-labels"], labelEn: "Events", labelHy: "Իրադ.", icon: "⚡" },
+  { id: "arrows", ids: ["arrow-line", "arrow-head", "arrow-label"], labelEn: "Campaigns", labelHy: "Արշ.", icon: "⚔️" },
+  { id: "neighbors", ids: ["neighbor-fill", "neighbor-outline"], labelEn: "Neighbors", labelHy: "Հարև.", icon: "🏳️" },
+] as const;
+
+function MapControls({ mapRef, containerRef, lang }: {
+  mapRef: React.RefObject<maplibregl.Map | null>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  lang: string;
+}) {
+  const hy = lang === "hy";
+  const [layerPanel, setLayerPanel] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleLayer = (layerId: string, ids: readonly string[]) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const nowHidden = !hidden.has(layerId);
+    const vis = nowHidden ? "none" : "visible";
+    ids.forEach((id) => {
+      try { map.setLayoutProperty(id, "visibility", vis); } catch {}
+    });
+    setHidden((prev) => {
+      const next = new Set(prev);
+      nowHidden ? next.add(layerId) : next.delete(layerId);
+      return next;
+    });
+  };
+
+  const toggleFullscreen = () => {
+    const el = containerRef.current?.parentElement;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  // F key → fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFullscreen]);
+
+  return (
+    <>
+      {/* Control buttons — top-left stack */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        {/* Layers button */}
+        <button
+          onClick={() => { setLayerPanel((v) => !v); setLegendOpen(false); }}
+          title={hy ? "Շերտեր" : "Layers"}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shadow-lg border transition-all ${
+            layerPanel ? "bg-armenia-orange text-stone-950 border-armenia-orange" : "bg-stone-950/85 backdrop-blur border-stone-700 text-stone-300 hover:text-white"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </button>
+
+        {/* Legend button */}
+        <button
+          onClick={() => { setLegendOpen((v) => !v); setLayerPanel(false); }}
+          title={hy ? "Լեգենդ" : "Legend"}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shadow-lg border transition-all ${
+            legendOpen ? "bg-armenia-orange text-stone-950 border-armenia-orange" : "bg-stone-950/85 backdrop-blur border-stone-700 text-stone-300 hover:text-white"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        </button>
+
+        {/* Fullscreen button */}
+        <button
+          onClick={toggleFullscreen}
+          title={isFullscreen ? (hy ? "Ելք" : "Exit fullscreen") : (hy ? "Լիաէկ." : "Fullscreen")}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-sm shadow-lg border bg-stone-950/85 backdrop-blur border-stone-700 text-stone-300 hover:text-white transition-all"
+        >
+          {isFullscreen ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Layers panel */}
+      {layerPanel && (
+        <div className="absolute top-4 left-14 z-10 bg-stone-950/90 backdrop-blur border border-stone-700 rounded-xl shadow-2xl p-3 w-44">
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-2 px-1">{hy ? "Շերտեր" : "Map Layers"}</div>
+          {LAYERS.map((layer) => {
+            const on = !hidden.has(layer.id);
+            return (
+              <button
+                key={layer.id}
+                onClick={() => toggleLayer(layer.id, layer.ids)}
+                className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors ${on ? "text-white" : "text-stone-600"}`}
+              >
+                <span className={`w-8 h-4 rounded-full transition-colors flex-shrink-0 ${on ? "bg-armenia-orange" : "bg-stone-700"}`}>
+                  <span className={`block w-3.5 h-3.5 rounded-full bg-white shadow transition-transform mt-0.5 ${on ? "translate-x-4" : "translate-x-0.5"}`} />
+                </span>
+                <span className="text-base leading-none">{layer.icon}</span>
+                <span className="text-xs">{hy ? layer.labelHy : layer.labelEn}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Legend panel */}
+      {legendOpen && (
+        <div className="absolute top-4 left-14 z-10 bg-stone-950/90 backdrop-blur border border-stone-700 rounded-xl shadow-2xl p-4 w-52">
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-3">{hy ? "Լեգենդ" : "Legend"}</div>
+          <div className="space-y-2.5 text-xs">
+            {[
+              { color: "#c0392b", opacity: "bg-opacity-30", label: hy ? "Հայկ. հիմն. պետ." : "Main Armenian state", type: "fill" },
+              { color: "#2980b9", opacity: "bg-opacity-20", label: hy ? "Դաշնակից/փոքր" : "Allied / minor state", type: "fill" },
+              { color: "#78716c", opacity: "bg-opacity-10", label: hy ? "Հարևան պետ." : "Neighbour state", type: "dash" },
+              { color: "#F2A800", opacity: "", label: hy ? "Պատմ. իրադ." : "Historical event", type: "dot" },
+              { color: "#F2A800", opacity: "", label: hy ? "Մայրաքաղաք" : "Capital city", type: "star" },
+              { color: "#e7e5e4", opacity: "", label: hy ? "Քաղաք" : "City", type: "circle" },
+              { color: "#a8a29e", opacity: "", label: hy ? "Ռազմ. արշ." : "Military campaign", type: "arrow" },
+            ].map(({ color, label, type }) => (
+              <div key={label} className="flex items-center gap-2.5 text-stone-300">
+                {type === "fill" && <span className="w-5 h-3 rounded shrink-0 opacity-70" style={{ backgroundColor: color, border: `1.5px solid ${color}` }} />}
+                {type === "dash" && <span className="w-5 h-0 border-t-2 border-dashed shrink-0" style={{ borderColor: color }} />}
+                {type === "dot" && <span className="w-3.5 h-3.5 rounded-full shrink-0 mx-[3px]" style={{ backgroundColor: color }} />}
+                {type === "star" && <span className="text-base leading-none shrink-0" style={{ color }}>★</span>}
+                {type === "circle" && <span className="w-3 h-3 rounded-full border-2 shrink-0 mx-[1px]" style={{ borderColor: color }} />}
+                {type === "arrow" && <span className="text-xs shrink-0 mx-[1px]" style={{ color }}>➤</span>}
+                <span className="leading-tight">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
 }

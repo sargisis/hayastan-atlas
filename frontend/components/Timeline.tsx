@@ -53,6 +53,20 @@ export default function Timeline({ year, onChange }: Props) {
     if (next) onChange(next.start_year);
   };
 
+  // v4: Global keyboard shortcuts for timeline
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === " ") { e.preventDefault(); setPlaying((p) => !p); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); jumpEra(-1); }
+      if (e.key === "ArrowRight") { e.preventDefault(); jumpEra(1); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eras, currentEraIdx]);
+
   const pct = yearToPct(year);
 
   return (
