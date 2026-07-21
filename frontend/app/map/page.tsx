@@ -8,6 +8,7 @@ import useSWR from "swr";
 import Timeline from "@/components/Timeline";
 import EraPanel from "@/components/EraPanel";
 import EventsPanel from "@/components/EventsPanel";
+import TerritoryChart from "@/components/TerritoryChart";
 import type { Era, Event, King } from "@/lib/types";
 import { useLang, fmt } from "@/lib/lang";
 import Link from "next/link";
@@ -84,6 +85,7 @@ export default function MapPage() {
         {pulseEra && <HistoryPulse era={pulseEra} />}
 
         <EventsPanel events={events} year={year} onJump={handleTimelineChange} />
+        <TerritoryChart year={year} />
         <ShareButton year={year} />
         <ExportButton year={year} />
       </div>
