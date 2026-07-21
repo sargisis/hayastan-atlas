@@ -194,7 +194,7 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*model.User, error)
 
 func (s *Store) ListBookmarks(ctx context.Context, userID string) ([]model.Bookmark, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, user_id, year, COALESCE(label,''), created_at FROM bookmarks WHERE user_id=$1 ORDER BY created_at DESC`,
+		`SELECT id, user_id, year, COALESCE(label,''), COALESCE(note,''), created_at FROM bookmarks WHERE user_id=$1 ORDER BY created_at DESC`,
 		userID)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (s *Store) ListBookmarks(ctx context.Context, userID string) ([]model.Bookm
 	var bs []model.Bookmark
 	for rows.Next() {
 		var b model.Bookmark
-		if err := rows.Scan(&b.ID, &b.UserID, &b.Year, &b.Label, &b.CreatedAt); err != nil {
+		if err := rows.Scan(&b.ID, &b.UserID, &b.Year, &b.Label, &b.Note, &b.CreatedAt); err != nil {
 			return nil, err
 		}
 		bs = append(bs, b)
@@ -220,9 +220,15 @@ func (s *Store) CountBookmarks(ctx context.Context, userID string) (int, error) 
 
 func (s *Store) CreateBookmark(ctx context.Context, b *model.Bookmark) error {
 	return s.db.QueryRow(ctx,
-		`INSERT INTO bookmarks (user_id, year, label) VALUES ($1,$2,$3) RETURNING id, created_at`,
-		b.UserID, b.Year, b.Label,
+		`INSERT INTO bookmarks (user_id, year, label, note) VALUES ($1,$2,$3,$4) RETURNING id, created_at`,
+		b.UserID, b.Year, b.Label, b.Note,
 	).Scan(&b.ID, &b.CreatedAt)
+}
+
+func (s *Store) UpdateBookmarkNote(ctx context.Context, id int, userID string, note string) error {
+	_, err := s.db.Exec(ctx,
+		`UPDATE bookmarks SET note=$1 WHERE id=$2 AND user_id=$3`, note, id, userID)
+	return err
 }
 
 func (s *Store) DeleteBookmark(ctx context.Context, id int, userID string) error {

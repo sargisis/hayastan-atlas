@@ -77,5 +77,6 @@ type Bookmark struct {
 	UserID    string    `json:"-"`
 	Year      int       `json:"year"`
 	Label     string    `json:"label"`
+	Note      string    `json:"note"`
 	CreatedAt time.Time `json:"created_at"`
 }

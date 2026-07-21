@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import KingCard from "@/components/KingCard";
+import DynastyTree from "@/components/DynastyTree";
 import type { King } from "@/lib/types";
 import { useLang, fmt, t } from "@/lib/lang";
 
@@ -83,6 +85,7 @@ const DYNASTY_META: Record<string, DynastyMeta> = {
 export default function KingsPage() {
   const { lang } = useLang();
   const { data: kings, isLoading } = useSWR<King[]>("/api/kings", fetcher);
+  const [treeOpen, setTreeOpen] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -146,18 +149,42 @@ export default function KingsPage() {
               )}
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {dynastyKings.map((k, i) => (
-                <KingCard
-                  key={k.id}
-                  king={k}
-                  color={color}
-                  dynastyStart={dStart}
-                  dynastyEnd={dEnd}
-                  index={i}
-                />
-              ))}
+            {/* Tree / Cards toggle */}
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setTreeOpen(treeOpen === dynasty ? null : dynasty)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                  treeOpen === dynasty
+                    ? "border-current text-white"
+                    : "border-stone-700 text-stone-400 hover:text-white hover:border-stone-500"
+                }`}
+                style={treeOpen === dynasty ? { borderColor: color, color } : {}}
+              >
+                {treeOpen === dynasty ? "📋 " : "🌳 "}
+                {treeOpen === dynasty
+                  ? (lang === "hy" ? "Ցուցակ" : "List view")
+                  : (lang === "hy" ? "Ծառ" : "Dynasty tree")}
+              </button>
             </div>
+
+            {treeOpen === dynasty ? (
+              <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-4">
+                <DynastyTree kings={dynastyKings} dynastyName={dynasty} color={color} />
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {dynastyKings.map((k, i) => (
+                  <KingCard
+                    key={k.id}
+                    king={k}
+                    color={color}
+                    dynastyStart={dStart}
+                    dynastyEnd={dEnd}
+                    index={i}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         );
       })}
