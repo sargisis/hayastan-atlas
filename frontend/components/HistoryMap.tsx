@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
@@ -318,6 +318,47 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         },
       });
 
+      // --- Battle markers ---
+      map.addSource("battles", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "battle-glow",
+        type: "circle",
+        source: "battles",
+        paint: {
+          "circle-radius": 14,
+          "circle-color": ["get", "color"],
+          "circle-opacity": 0.15,
+          "circle-blur": 1,
+        },
+      });
+      map.addLayer({
+        id: "battle-pins",
+        type: "circle",
+        source: "battles",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": ["get", "color"],
+          "circle-stroke-color": "#000",
+          "circle-stroke-width": 1.5,
+          "circle-opacity": 0.95,
+        },
+      });
+      map.addLayer({
+        id: "battle-icon",
+        type: "symbol",
+        source: "battles",
+        layout: {
+          "text-field": "⚔",
+          "text-size": 10,
+          "text-font": ["Open Sans Regular"],
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": "#000", "text-opacity": 0.9 },
+      });
+
       // --- State name labels ---
       map.addLayer({
         id: "territory-labels",
@@ -375,6 +416,30 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
       map.on("mouseenter", "event-pins", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "event-pins", () => { map.getCanvas().style.cursor = ""; });
+
+      // Battle popup
+      const battlePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" });
+      map.on("click", "battle-pins", (e) => {
+        const feat = e.features?.[0];
+        if (!feat) return;
+        const p = feat.properties as Record<string, string>;
+        const coords = (feat.geometry as GeoJSON.Point).coordinates as [number, number];
+        const curLang = (map as any)._currentLang as string ?? "en";
+        const hy = curLang === "hy";
+        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const outcomeLabel = p.outcome === "victory" ? (hy ? "✅ Հաղ." : "✅ Victory") : p.outcome === "defeat" ? (hy ? "❌ Պ." : "❌ Defeat") : (hy ? "⚖️ Ничья" : "⚖️ Draw");
+        battlePopup.setLngLat(coords).setHTML(
+          `<div style="font-family:sans-serif;color:#e7e5e4;background:#1c1917;padding:12px 14px;border-radius:8px;border:1px solid #44403c">` +
+          `<div style="font-size:10px;color:${p.color};font-weight:700;letter-spacing:.08em;margin-bottom:4px">${esc(p.year < 0 ? `${Math.abs(+p.year)} BC` : `${p.year} AD`)} · ${outcomeLabel}</div>` +
+          `<div style="font-size:13px;font-weight:700;margin-bottom:6px">${esc(hy ? p.name_hy : p.name)}</div>` +
+          `<div style="font-size:10px;color:#a8a29e;margin-bottom:2px">🛡 ${esc(hy ? p.armenian_side_hy : p.armenian_side)}</div>` +
+          `<div style="font-size:10px;color:#a8a29e;margin-bottom:8px">⚔ ${esc(hy ? p.opponent_hy : p.opponent)}</div>` +
+          `<div style="font-size:10px;color:#d6d3d1;line-height:1.5;border-top:1px solid #292524;padding-top:6px">${esc(hy ? p.significance_hy : p.significance)}</div>` +
+          `</div>`
+        ).addTo(map);
+      });
+      map.on("mouseenter", "battle-pins", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "battle-pins", () => { map.getCanvas().style.cursor = ""; });
 
       setStyleReady(true);
     });
@@ -456,6 +521,11 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
         routeSource?.setData(routesToGeoJSON(year));
 
+        // Update battle markers — show battles within ±15 years of current year
+        const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
+        const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - year) <= 15);
+        battleSource?.setData(battleToGeoJSON(visibleBattles));
+
         // Territory phase for this exact year
         const terrRes = await fetch(`/api/territory?year=${year}`, { signal: controller.signal });
         const source = map!.getSource("territory") as maplibregl.GeoJSONSource | undefined;
@@ -518,6 +588,52 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
       {styleReady && <MapControls mapRef={mapRef} containerRef={containerRef} lang={lang} />}
     </div>
   );
+}
+
+// Major battles in Armenian history
+interface BattleFeature {
+  name: string; name_hy: string;
+  year: number; lat: number; lng: number;
+  armenian_side: string; armenian_side_hy: string;
+  opponent: string; opponent_hy: string;
+  outcome: "victory" | "defeat" | "draw";
+  significance: string; significance_hy: string;
+}
+
+const BATTLES: BattleFeature[] = [
+  { name: "Battle of Ararat", name_hy: "Արարատի ճ.", year: -782, lat: 39.7, lng: 44.5, armenian_side: "Urartu (Argishti I)", armenian_side_hy: "Ուրարտու (Արգիշտի Ա)", opponent: "Assyrian Empire", opponent_hy: "Ասորական կայսրություն", outcome: "victory", significance: "Urartu repelled the Assyrian invasion, securing the Ararat valley", significance_hy: "Ուրարտուն հետ մղեց ասորական արշավանքը" },
+  { name: "Battle of the Araxes", name_hy: "Արաքսի ճ.", year: -521, lat: 39.9, lng: 45.2, armenian_side: "Armenian Satrapy", armenian_side_hy: "Հայ. Սատրապություն", opponent: "Persian Empire (Darius I)", opponent_hy: "Պարսկ. Կայս. (Դարեհ Ա)", outcome: "defeat", significance: "Armenia crushed by Darius I while suppressing empire-wide revolt", significance_hy: "Դարեհ Ա-ն ճնշեց ամբողջ կայսրության ապստամբությունը" },
+  { name: "Battle of Tigranocerta", name_hy: "Տիգրանակերտի ճ.", year: -69, lat: 37.9, lng: 41.5, armenian_side: "Tigranes the Great", armenian_side_hy: "Տիգրան Մեծ", opponent: "Rome (Lucullus)", opponent_hy: "Հռոմ (Լուկուլլուս)", outcome: "defeat", significance: "Rome defeated Armenia's vast but ill-disciplined army; empire began to shrink", significance_hy: "Հռոմը ջախջախեց Տիգրանի հսկայական, բայց անկազմ բանակը" },
+  { name: "Battle of Artaxata", name_hy: "Արտաշատի ճ.", year: -66, lat: 39.8, lng: 44.5, armenian_side: "Tigranes the Great", armenian_side_hy: "Տիգրան Մեծ", opponent: "Rome (Pompey)", opponent_hy: "Հռոմ (Պոմպեոս)", outcome: "draw", significance: "Tigranes surrendered western conquests but kept core Armenia; treaty signed", significance_hy: "Տիգրանը հանձնեց արևմտյան նվաճումները, պահեց Մեծ Հայքը" },
+  { name: "Battle of Avarayr", name_hy: "Ավարայրի ճ.", year: 451, lat: 39.15, lng: 44.72, armenian_side: "Vardan Mamikonian", armenian_side_hy: "Վարդան Մամիկոնյան", opponent: "Sasanid Persia", opponent_hy: "Սասանյան Պարսկաստան", outcome: "defeat", significance: "Armenians lost the battle but preserved Christianity — called a 'holy defeat'", significance_hy: "Հայերը կռվից պարտվեցին, բայց պահեցին Քրիստոնեությունը — «Սուրբ պարտություն»" },
+  { name: "Battle of Bagrevand", name_hy: "Բագրևանդի ճ.", year: 775, lat: 39.6, lng: 43.4, armenian_side: "Armenian nobles", armenian_side_hy: "Հայ նախարարներ", opponent: "Arab Caliphate", opponent_hy: "Արաբ. Խալիֆայություն", outcome: "defeat", significance: "Crushing Arab victory; end of Armenian noble resistance for a century", significance_hy: "Ճակատամարտ, որից հետո հայ ազնվականությունը 100 տարի չկռվեց" },
+  { name: "Battle of Muş", name_hy: "Մուշի ճ.", year: 863, lat: 38.7, lng: 41.5, armenian_side: "Bagratid Armenia", armenian_side_hy: "Բագրատ. Հայաստան", opponent: "Arab Caliphate", opponent_hy: "Արաբ. Խալիֆայություն", outcome: "victory", significance: "Decisive Bagratid victory, paving way for independent kingdom (885 AD)", significance_hy: "Բագրատունիների հաղթանակ, ճ. բացեց ուղի անկախ թ-ի (885 թ.)" },
+  { name: "Battle of Kapetrou", name_hy: "Կապետրուի ճ.", year: 958, lat: 39.4, lng: 36.6, armenian_side: "Bagratid / Byzantine alliance", armenian_side_hy: "Բագրատ. / Բյուզ. դաշ.", opponent: "Hamdanid Emirate", opponent_hy: "Համդ. Էmirship", outcome: "victory", significance: "Joint Armenian-Byzantine forces pushed back Muslim advance in Anatolia", significance_hy: "Հայ-Բյուզ. ուժերը հետ մղեցին մուսուլ. արշ. Անատոլիայում" },
+  { name: "Battle of Manzikert", name_hy: "Մանզիկերտի ճ.", year: 1071, lat: 38.95, lng: 42.52, armenian_side: "Byzantine (Armenian generals)", armenian_side_hy: "Բյուզ. (հայ զորավ.)", opponent: "Seljuk Turks (Alp Arslan)", opponent_hy: "Սելջ. թուրք. (Ալփ Արsl.)", outcome: "defeat", significance: "Byzantine collapse opened Armenia to Seljuk conquest; end of Bagratid era", significance_hy: "Բյուզ. կործ. բացեց Հայաստանը Սելջ. նվաճ. Բագրատ. դ. վերջ" },
+  { name: "Battle of Sis", name_hy: "Սսի ճ.", year: 1226, lat: 37.2, lng: 35.6, armenian_side: "Armenian Cilicia (Hethumids)", armenian_side_hy: "Կիլ. Հայ. (Հեթ.)", opponent: "Seljuk Sultanate", opponent_hy: "Սելջ. Սուլթ.", outcome: "victory", significance: "Cilician Armenia repelled Seljuk attack, beginning Hethumid alliance with Mongols", significance_hy: "Կիլ. Հայ. հետ մղ. Սելջ. հարձ., սկ. Մոնղ. դաշ." },
+  { name: "Battle of Mari", name_hy: "Մարիի ճ.", year: 1266, lat: 33.5, lng: 36.3, armenian_side: "Armenian Cilicia + Mongols", armenian_side_hy: "Կիլ. Հայ. + Մոնղ.", opponent: "Mamluk Egypt", opponent_hy: "Մամluk Եگipт.", outcome: "defeat", significance: "Mamluk forces devastated Cilician Armenia; began the kingdom's long decline", significance_hy: "Մամlukները ավ. Կիլ. Հայ., սկ. թ-ի անկ." },
+  { name: "Fall of Sis (End of Cilicia)", name_hy: "Սսի Անկ.", year: 1375, lat: 37.2, lng: 35.6, armenian_side: "Last King Leo VI", armenian_side_hy: "Վերջ. Թagav. Լevon ԶI", opponent: "Mamluk Egypt", opponent_hy: "Մամluk Եg.", outcome: "defeat", significance: "Last Armenian kingdom fell; Leo VI taken prisoner, died in exile in 1393", significance_hy: "Վերջ. հայ. թ-ն ընկ., Լevon ԶI-ն գ. բ., 1393 թ. մ. ատ." },
+  { name: "Battle of Sardarapat", name_hy: "Սardarapatի ճ.", year: 1918, lat: 40.0, lng: 43.8, armenian_side: "Armenian Republic forces", armenian_side_hy: "Հայ. Հանr. ուժ.", opponent: "Ottoman Empire", opponent_hy: "Osmanlı Kایs.", outcome: "victory", significance: "Most important Armenian military victory in modern history — saved the Armenian people from extermination", significance_hy: "Ամ. կ. հայ. ռ. հ. արդ. — փ. հ. ժ. ո." },
+  { name: "Battle of Bash Abaran", name_hy: "Բաш Աbararanի ճ.", year: 1918, lat: 40.6, lng: 44.0, armenian_side: "Armenian Republic (Dro)", armenian_side_hy: "Հay. Hanr. (Drо)", opponent: "Ottoman Empire", opponent_hy: "Osmanlı Kайс.", outcome: "victory", significance: "Alongside Sardarapat, stopped the Ottoman advance into what remained of Armenia", significance_hy: "Sardarapatի կ. կangeIn հay. naxkndik Osman. arshav." },
+];
+
+function battleToGeoJSON(battles: BattleFeature[]) {
+  return {
+    type: "FeatureCollection" as const,
+    features: battles.map((b) => ({
+      type: "Feature" as const,
+      properties: {
+        name: b.name, name_hy: b.name_hy,
+        year: b.year,
+        armenian_side: b.armenian_side, armenian_side_hy: b.armenian_side_hy,
+        opponent: b.opponent, opponent_hy: b.opponent_hy,
+        outcome: b.outcome,
+        significance: b.significance, significance_hy: b.significance_hy,
+        color: b.outcome === "victory" ? "#22c55e" : b.outcome === "defeat" ? "#ef4444" : "#f59e0b",
+      },
+      geometry: { type: "Point" as const, coordinates: [b.lng, b.lat] },
+    })),
+  };
 }
 
 // Historical trade & military routes (static GeoJSON features)
@@ -605,6 +721,7 @@ const LAYERS = [
   { id: "events", ids: ["event-pins", "event-pin-labels"], labelEn: "Events", labelHy: "Իրադ.", icon: "⚡" },
   { id: "arrows", ids: ["arrow-line", "arrow-head", "arrow-label"], labelEn: "Campaigns", labelHy: "Արշ.", icon: "⚔️" },
   { id: "routes", ids: ["route-line", "route-arrows", "route-labels"], labelEn: "Routes", labelHy: "Ուղ.", icon: "🛤️" },
+  { id: "battles", ids: ["battle-glow", "battle-pins", "battle-icon"], labelEn: "Battles", labelHy: "⚔", icon: "⚔️" },
   { id: "neighbors", ids: ["neighbor-fill", "neighbor-outline"], labelEn: "Neighbors", labelHy: "Հարև.", icon: "🏳️" },
 ] as const;
 

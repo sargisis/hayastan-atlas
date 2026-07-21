@@ -9,6 +9,8 @@ import Timeline from "@/components/Timeline";
 import EraPanel from "@/components/EraPanel";
 import EventsPanel from "@/components/EventsPanel";
 import TerritoryChart from "@/components/TerritoryChart";
+import RulerOfYear from "@/components/RulerOfYear";
+import ShortcutsOverlay from "@/components/ShortcutsOverlay";
 import type { Era, Event, King } from "@/lib/types";
 import { useLang, fmt } from "@/lib/lang";
 import Link from "next/link";
@@ -85,7 +87,9 @@ export default function MapPage() {
         {pulseEra && <HistoryPulse era={pulseEra} />}
 
         <EventsPanel events={events} year={year} onJump={handleTimelineChange} />
+        <RulerOfYear year={year} kings={kings} />
         <TerritoryChart year={year} />
+        <ShortcutsOverlay />
         <ShareButton year={year} />
         <ExportButton year={year} />
       </div>
