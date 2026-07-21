@@ -306,13 +306,14 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         const title = currentLang === "hy" && props.title_hy ? props.title_hy : props.title;
         const desc = currentLang === "hy" && props.description_hy ? props.description_hy : (props.description ?? "");
         const yearStr = props.year < 0 ? `${Math.abs(props.year)} BC` : `${props.year} AD`;
+        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         popup
           .setLngLat(coords)
           .setHTML(
             `<div style="font-family:sans-serif;color:#e7e5e4;background:#1c1917;padding:10px 12px;border-radius:8px;border:1px solid #44403c">` +
-            `<div style="font-size:10px;color:#F2A800;font-weight:700;letter-spacing:.08em;margin-bottom:4px">${yearStr}</div>` +
-            `<div style="font-size:13px;font-weight:600;margin-bottom:${desc ? "6px" : "0"}">${title}</div>` +
-            (desc ? `<div style="font-size:11px;color:#a8a29e;line-height:1.5">${desc}</div>` : "") +
+            `<div style="font-size:10px;color:#F2A800;font-weight:700;letter-spacing:.08em;margin-bottom:4px">${esc(yearStr)}</div>` +
+            `<div style="font-size:13px;font-weight:600;margin-bottom:${desc ? "6px" : "0"}">${esc(title)}</div>` +
+            (desc ? `<div style="font-size:11px;color:#a8a29e;line-height:1.5">${esc(desc)}</div>` : "") +
             `</div>`
           )
           .addTo(map);

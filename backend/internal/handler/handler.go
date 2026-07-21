@@ -290,6 +290,15 @@ func (h *Handler) CreateBookmark(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "label too long")
 		return
 	}
+	count, err := h.store.CountBookmarks(r.Context(), b.UserID)
+	if err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	if count >= 500 {
+		writeErr(w, 429, "bookmark limit reached")
+		return
+	}
 	if err := h.store.CreateBookmark(r.Context(), &b); err != nil {
 		writeErr(w, 500, "internal error")
 		return

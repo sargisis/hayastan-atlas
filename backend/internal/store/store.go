@@ -212,6 +212,12 @@ func (s *Store) ListBookmarks(ctx context.Context, userID string) ([]model.Bookm
 	return bs, rows.Err()
 }
 
+func (s *Store) CountBookmarks(ctx context.Context, userID string) (int, error) {
+	var count int
+	err := s.db.QueryRow(ctx, `SELECT COUNT(*) FROM bookmarks WHERE user_id=$1`, userID).Scan(&count)
+	return count, err
+}
+
 func (s *Store) CreateBookmark(ctx context.Context, b *model.Bookmark) error {
 	return s.db.QueryRow(ctx,
 		`INSERT INTO bookmarks (user_id, year, label) VALUES ($1,$2,$3) RETURNING id, created_at`,
