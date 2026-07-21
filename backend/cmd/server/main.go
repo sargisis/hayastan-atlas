@@ -64,6 +64,7 @@ func main() {
 		r.Get("/api/bookmarks", h.ListBookmarks)
 		r.Post("/api/bookmarks", h.CreateBookmark)
 		r.Delete("/api/bookmarks/{id}", h.DeleteBookmark)
+		r.Patch("/api/bookmarks/{id}/note", h.UpdateBookmarkNote)
 	})
 
 	port := os.Getenv("PORT")

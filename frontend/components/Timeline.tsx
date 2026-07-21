@@ -14,6 +14,14 @@ function yearToPct(y: number) {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+// Speed options: years per tick (tick = 60ms)
+const SPEED_OPTIONS = [
+  { label: "0.5×", years: 4 },
+  { label: "1×",   years: 8 },
+  { label: "2×",   years: 16 },
+  { label: "5×",   years: 40 },
+];
+
 interface Props {
   year: number;
   onChange: (year: number) => void;
@@ -23,6 +31,7 @@ export default function Timeline({ year, onChange }: Props) {
   const { lang } = useLang();
   const { data: eras } = useSWR<Era[]>("/api/eras", fetcher);
   const [playing, setPlaying] = useState(false);
+  const [speedIdx, setSpeedIdx] = useState(1); // default 1×
   const playRef = useRef<number | null>(null);
 
   const handleChange = useCallback(
@@ -30,16 +39,17 @@ export default function Timeline({ year, onChange }: Props) {
     [onChange]
   );
 
-  // Auto-play: advance ~8 years per tick
+  // Auto-play with configurable speed
   useEffect(() => {
     if (!playing) return;
+    const yearsPerTick = SPEED_OPTIONS[speedIdx].years;
     playRef.current = window.setInterval(() => {
-      onChange(Math.min(year + 8, MAX_YEAR));
+      onChange(Math.min(year + yearsPerTick, MAX_YEAR));
     }, 60);
     return () => {
       if (playRef.current) window.clearInterval(playRef.current);
     };
-  }, [playing, year, onChange]);
+  }, [playing, year, onChange, speedIdx]);
 
   useEffect(() => {
     if (year >= MAX_YEAR) setPlaying(false);
@@ -61,6 +71,11 @@ export default function Timeline({ year, onChange }: Props) {
       if (e.key === " ") { e.preventDefault(); setPlaying((p) => !p); }
       if (e.key === "ArrowLeft") { e.preventDefault(); jumpEra(-1); }
       if (e.key === "ArrowRight") { e.preventDefault(); jumpEra(1); }
+      // v5: speed shortcuts
+      if (e.key === "1") setSpeedIdx(0);
+      if (e.key === "2") setSpeedIdx(1);
+      if (e.key === "3") setSpeedIdx(2);
+      if (e.key === "4") setSpeedIdx(3);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -90,12 +105,12 @@ export default function Timeline({ year, onChange }: Props) {
         .maplibregl-popup-tip { border-top-color: #1c1917 !important; }
         .maplibregl-popup-close-button { color: #aaa !important; }
 
-        /* Custom range slider — big hit area, styled thumb */
+        /* Custom range slider */
         .tl-slider {
           -webkit-appearance: none;
           appearance: none;
           width: 100%;
-          height: 28px;               /* generous hit area */
+          height: 28px;
           background: transparent;
           cursor: pointer;
           margin: 0;
@@ -114,7 +129,7 @@ export default function Timeline({ year, onChange }: Props) {
           background: #D90012;
           border: 3px solid #fff;
           box-shadow: 0 0 10px rgba(217,0,18,.8);
-          margin-top: -7px;           /* centers thumb on 6px track */
+          margin-top: -7px;
         }
         .tl-slider::-moz-range-track {
           height: 6px;
@@ -132,7 +147,7 @@ export default function Timeline({ year, onChange }: Props) {
       `}</style>
 
       <div className="max-w-5xl mx-auto">
-        {/* Era color bands — click jumps to era START */}
+        {/* Era color bands */}
         {eras && (
           <div className="relative h-2 md:h-3 rounded-full overflow-hidden mb-4 bg-stone-800">
             {eras.map((era) => (
@@ -157,7 +172,7 @@ export default function Timeline({ year, onChange }: Props) {
 
         {/* Controls + slider */}
         <div className="flex items-center gap-3">
-          {/* Era navigation */}
+          {/* Era navigation + play */}
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => jumpEra(-1)}
@@ -184,6 +199,24 @@ export default function Timeline({ year, onChange }: Props) {
             >
               ⏭
             </button>
+          </div>
+
+          {/* Speed selector */}
+          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-stone-800 rounded-md p-0.5">
+            {SPEED_OPTIONS.map((opt, i) => (
+              <button
+                key={opt.label}
+                onClick={() => setSpeedIdx(i)}
+                className={`px-2 py-1 rounded text-[10px] font-mono font-bold transition-colors ${
+                  speedIdx === i
+                    ? "bg-armenia-orange text-stone-950"
+                    : "text-stone-500 hover:text-stone-300"
+                }`}
+                title={`Speed ${opt.label} (key: ${i + 1})`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
 
           <span className="text-stone-500 text-xs w-14 text-right shrink-0">{fmt(MIN_YEAR, lang)}</span>

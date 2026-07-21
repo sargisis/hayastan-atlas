@@ -320,6 +320,31 @@ func (h *Handler) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(204)
 }
 
+func (h *Handler) UpdateBookmarkNote(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		writeErr(w, 400, "invalid id")
+		return
+	}
+	var body struct {
+		Note string `json:"note"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeErr(w, 400, "invalid json")
+		return
+	}
+	if len(body.Note) > 2000 {
+		writeErr(w, 400, "note too long")
+		return
+	}
+	userID := userIDFromCtx(r.Context())
+	if err := h.store.UpdateBookmarkNote(r.Context(), id, userID, body.Note); err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	w.WriteHeader(204)
+}
+
 // --- Auth middleware ---
 
 type ctxKey string

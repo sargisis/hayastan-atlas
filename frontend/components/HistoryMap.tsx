@@ -264,6 +264,60 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         },
       });
 
+      // --- Historical routes ---
+      map.addSource("routes", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "routes",
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 2,
+          "line-dasharray": [4, 3],
+          "line-opacity": 0.75,
+        },
+      });
+      map.addLayer({
+        id: "route-arrows",
+        type: "symbol",
+        source: "routes",
+        layout: {
+          "symbol-placement": "line",
+          "symbol-spacing": 80,
+          "text-field": "▶",
+          "text-size": 10,
+          "text-font": ["Open Sans Regular"],
+          "text-rotation-alignment": "map",
+          "text-allow-overlap": true,
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-opacity": 0.85,
+        },
+      });
+      map.addLayer({
+        id: "route-labels",
+        type: "symbol",
+        source: "routes",
+        layout: {
+          "symbol-placement": "line-center",
+          "text-field": ["get", "name"],
+          "text-size": 10,
+          "text-font": ["Open Sans Italic"],
+          "text-offset": [0, -1],
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-halo-color": "#000",
+          "text-halo-width": 1.2,
+          "text-opacity": 0.9,
+        },
+      });
+
       // --- State name labels ---
       map.addLayer({
         id: "territory-labels",
@@ -398,6 +452,10 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
           });
         }
 
+        // Update historical routes for this year
+        const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
+        routeSource?.setData(routesToGeoJSON(year));
+
         // Territory phase for this exact year
         const terrRes = await fetch(`/api/territory?year=${year}`, { signal: controller.signal });
         const source = map!.getSource("territory") as maplibregl.GeoJSONSource | undefined;
@@ -462,13 +520,95 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
   );
 }
 
+// Historical trade & military routes (static GeoJSON features)
+interface RouteFeature {
+  name: string;
+  name_hy: string;
+  color: string;
+  type: "trade" | "military";
+  from_year: number;
+  to_year: number;
+  coords: [number, number][];
+}
+
+const HISTORICAL_ROUTES: RouteFeature[] = [
+  {
+    name: "Silk Road",
+    name_hy: "Μεταξοδρόμος",
+    color: "#F2A800",
+    type: "trade",
+    from_year: -200,
+    to_year: 1400,
+    coords: [[116, 40], [80, 39], [63, 39], [52, 39], [44, 40], [40, 40], [36, 36], [29, 41]],
+  },
+  {
+    name: "Persian Royal Road",
+    name_hy: "Պարսկ. Արք. Ճ.",
+    color: "#9b59b6",
+    type: "trade",
+    from_year: -550,
+    to_year: -330,
+    coords: [[38, 37], [40, 39], [44, 40], [46, 38], [52, 32], [55, 30]],
+  },
+  {
+    name: "Tigranes the Great — Western Campaign",
+    name_hy: "Տիգրան Մեծ — Արևմ. Արշ.",
+    color: "#e74c3c",
+    type: "military",
+    from_year: -83,
+    to_year: -69,
+    coords: [[44, 40], [40, 37], [37, 36], [36, 36], [35, 36], [36, 34]],
+  },
+  {
+    name: "Tigranes — Northern Campaign",
+    name_hy: "Տիգրան — Հյուսիս. Արշ.",
+    color: "#e74c3c",
+    type: "military",
+    from_year: -83,
+    to_year: -69,
+    coords: [[44, 40], [43, 42], [45, 41], [49, 41], [50, 43]],
+  },
+  {
+    name: "Black Sea Trade Route",
+    name_hy: "Սև Ծ. Ճ.",
+    color: "#3498db",
+    type: "trade",
+    from_year: -600,
+    to_year: 1200,
+    coords: [[44, 40], [41, 41], [39, 41], [36, 42], [33, 42], [29, 41]],
+  },
+  {
+    name: "Caspian Route",
+    name_hy: "Կասպ. Ճ.",
+    color: "#1abc9c",
+    type: "trade",
+    from_year: -400,
+    to_year: 1300,
+    coords: [[44, 40], [47, 40], [49, 39], [50, 40], [52, 41], [53, 43]],
+  },
+];
+
+function routesToGeoJSON(year: number) {
+  const features = HISTORICAL_ROUTES
+    .filter((r) => year >= r.from_year && year <= r.to_year)
+    .map((r) => ({
+      type: "Feature" as const,
+      properties: { name: r.name, name_hy: r.name_hy, color: r.color, kind: r.type },
+      geometry: { type: "LineString" as const, coordinates: r.coords },
+    }));
+  return { type: "FeatureCollection" as const, features };
+}
+
 // Layer visibility state
 const LAYERS = [
   { id: "cities", ids: ["city-dots", "city-stars", "city-labels"], labelEn: "Cities", labelHy: "Քաղաքներ", icon: "🏙️" },
   { id: "events", ids: ["event-pins", "event-pin-labels"], labelEn: "Events", labelHy: "Իրադ.", icon: "⚡" },
   { id: "arrows", ids: ["arrow-line", "arrow-head", "arrow-label"], labelEn: "Campaigns", labelHy: "Արշ.", icon: "⚔️" },
+  { id: "routes", ids: ["route-line", "route-arrows", "route-labels"], labelEn: "Routes", labelHy: "Ուղ.", icon: "🛤️" },
   { id: "neighbors", ids: ["neighbor-fill", "neighbor-outline"], labelEn: "Neighbors", labelHy: "Հարև.", icon: "🏳️" },
 ] as const;
+
+const TERRAIN_SOURCE = "maplibre-dem";
 
 function MapControls({ mapRef, containerRef, lang }: {
   mapRef: React.RefObject<maplibregl.Map | null>;
@@ -480,6 +620,35 @@ function MapControls({ mapRef, containerRef, lang }: {
   const [legendOpen, setLegendOpen] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [terrain, setTerrain] = useState(false);
+
+  const toggleTerrain = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!terrain) {
+      if (!map.getSource(TERRAIN_SOURCE)) {
+        map.addSource(TERRAIN_SOURCE, {
+          type: "raster-dem",
+          url: "https://demotiles.maplibre.org/terrain-tiles/tiles.json",
+          tileSize: 256,
+        });
+      }
+      map.setTerrain({ source: TERRAIN_SOURCE, exaggeration: 1.6 });
+      if (!map.getLayer("hillshade")) {
+        map.addLayer({
+          id: "hillshade",
+          type: "hillshade",
+          source: TERRAIN_SOURCE,
+          paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#000" },
+        }, map.getLayer("neighbor-fill") ? "neighbor-fill" : undefined);
+      }
+      map.setLayoutProperty("hillshade", "visibility", "visible");
+    } else {
+      map.setTerrain(undefined);
+      if (map.getLayer("hillshade")) map.setLayoutProperty("hillshade", "visibility", "none");
+    }
+    setTerrain((v) => !v);
+  };
 
   const toggleLayer = (layerId: string, ids: readonly string[]) => {
     const map = mapRef.current;
@@ -572,6 +741,19 @@ function MapControls({ mapRef, containerRef, lang }: {
             </svg>
           )}
         </button>
+
+        {/* Terrain / 3D button */}
+        <button
+          onClick={toggleTerrain}
+          title={terrain ? (hy ? "Անջատ. ռելիեֆ" : "Disable 3D terrain") : (hy ? "3D ռելիեֆ" : "3D Terrain")}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shadow-lg border transition-all ${
+            terrain ? "bg-armenia-orange text-stone-950 border-armenia-orange" : "bg-stone-950/85 backdrop-blur border-stone-700 text-stone-300 hover:text-white"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 18l4-8 4 4 4-6 4 10H3z" />
+          </svg>
+        </button>
       </div>
 
       {/* Layers panel */}
@@ -610,6 +792,8 @@ function MapControls({ mapRef, containerRef, lang }: {
               { color: "#F2A800", opacity: "", label: hy ? "Մայրաքաղաք" : "Capital city", type: "star" },
               { color: "#e7e5e4", opacity: "", label: hy ? "Քաղաք" : "City", type: "circle" },
               { color: "#a8a29e", opacity: "", label: hy ? "Ռազմ. արշ." : "Military campaign", type: "arrow" },
+              { color: "#F2A800", opacity: "", label: hy ? "Առևտ. ուղի" : "Trade route", type: "route-trade" },
+              { color: "#e74c3c", opacity: "", label: hy ? "Ռազմ. ուղի" : "Military route", type: "route-military" },
             ].map(({ color, label, type }) => (
               <div key={label} className="flex items-center gap-2.5 text-stone-300">
                 {type === "fill" && <span className="w-5 h-3 rounded shrink-0 opacity-70" style={{ backgroundColor: color, border: `1.5px solid ${color}` }} />}
@@ -618,6 +802,8 @@ function MapControls({ mapRef, containerRef, lang }: {
                 {type === "star" && <span className="text-base leading-none shrink-0" style={{ color }}>★</span>}
                 {type === "circle" && <span className="w-3 h-3 rounded-full border-2 shrink-0 mx-[1px]" style={{ borderColor: color }} />}
                 {type === "arrow" && <span className="text-xs shrink-0 mx-[1px]" style={{ color }}>➤</span>}
+                {type === "route-trade" && <span className="w-5 h-0 border-t-2 border-dashed shrink-0" style={{ borderColor: color }} />}
+                {type === "route-military" && <span className="w-5 h-0 border-t-2 border-dashed shrink-0" style={{ borderColor: color }} />}
                 <span className="leading-tight">{label}</span>
               </div>
             ))}

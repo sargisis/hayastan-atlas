@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import type { Bookmark, User } from "@/lib/types";
@@ -10,6 +11,113 @@ const fetcher = (url: string) =>
     if (!r.ok) return null;
     return r.json();
   });
+
+function BookmarkRow({ bm, lang, onDelete }: {
+  bm: Bookmark;
+  lang: string;
+  onDelete: (id: number) => void;
+}) {
+  const [note, setNote] = useState(bm.note ?? "");
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const saveNote = async () => {
+    setSaving(true);
+    await fetch(`/api/bookmarks/${bm.id}/note`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note }),
+    });
+    setSaving(false);
+    setEditing(false);
+  };
+
+  return (
+    <div className="anim-fade-up group bg-stone-900 border border-stone-800 rounded-xl px-5 py-4 hover:border-stone-600 transition-all">
+      <div className="flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-bold text-armenia-orange tabular-nums mb-0.5">
+            {fmt(bm.year, lang)}
+          </div>
+          <div className="text-sm font-medium text-stone-100 truncate">
+            {bm.label || "Untitled bookmark"}
+          </div>
+        </div>
+
+        <Link
+          href={`/?year=${bm.year}`}
+          className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-stone-400 hover:text-white transition-colors border border-stone-700 hover:border-stone-500 rounded-lg px-3 py-1.5"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          Go to map
+        </Link>
+
+        <button
+          onClick={() => setEditing((v) => !v)}
+          className={`shrink-0 p-1.5 rounded-lg transition-colors ${editing ? "text-armenia-orange bg-stone-800" : "text-stone-600 hover:text-stone-300 hover:bg-stone-800"}`}
+          title="Add note"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+
+        <button
+          onClick={() => onDelete(bm.id)}
+          className="shrink-0 text-stone-600 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-stone-800"
+          title="Delete bookmark"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Note preview */}
+      {!editing && note && (
+        <p className="mt-2 text-xs text-stone-400 leading-relaxed border-l-2 border-stone-700 pl-3 cursor-pointer hover:text-stone-300" onClick={() => setEditing(true)}>
+          {note}
+        </p>
+      )}
+
+      {/* Note editor */}
+      {editing && (
+        <div className="mt-3">
+          <textarea
+            autoFocus
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={2000}
+            rows={3}
+            placeholder="Add a note about this period…"
+            className="w-full bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-xs text-stone-200 placeholder-stone-600 resize-none focus:outline-none focus:border-armenia-orange transition-colors"
+          />
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[10px] text-stone-600">{note.length}/2000</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setNote(bm.note ?? ""); setEditing(false); }}
+                className="text-xs text-stone-500 hover:text-stone-300 px-2 py-1 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveNote}
+                disabled={saving}
+                className="text-xs font-medium bg-armenia-orange text-stone-950 px-3 py-1 rounded-lg hover:bg-armenia-orange/80 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function BookmarksPage() {
   const { lang } = useLang();
@@ -70,7 +178,7 @@ export default function BookmarksPage() {
           Your <span className="text-armenia-orange">Bookmarks</span>
         </h1>
         <p className="text-stone-400 mt-2 text-sm">
-          Saved years from the map — jump back in instantly.
+          Saved years from the map — jump back in instantly. Click ✏ to add a note.
         </p>
       </div>
 
@@ -79,7 +187,7 @@ export default function BookmarksPage() {
           <div className="text-4xl mb-4">🔖</div>
           <p className="text-base">No bookmarks yet — save your favourite years on the map.</p>
           <Link
-            href="/map"
+            href="/"
             className="inline-block mt-4 text-sm text-armenia-orange hover:underline"
           >
             Go to map →
@@ -87,41 +195,8 @@ export default function BookmarksPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {list.map((bm, i) => (
-            <div
-              key={bm.id}
-              className="anim-fade-up group flex items-center gap-4 bg-stone-900 border border-stone-800 rounded-xl px-5 py-4 hover:border-stone-600 transition-all"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-armenia-orange tabular-nums mb-0.5">
-                  {fmt(bm.year, lang)}
-                </div>
-                <div className="text-sm font-medium text-stone-100 truncate">
-                  {bm.label || "Untitled bookmark"}
-                </div>
-              </div>
-
-              <Link
-                href={`/map?year=${bm.year}`}
-                className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-stone-400 hover:text-white transition-colors border border-stone-700 hover:border-stone-500 rounded-lg px-3 py-1.5"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Go to map
-              </Link>
-
-              <button
-                onClick={() => deleteBookmark(bm.id)}
-                className="shrink-0 text-stone-600 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-stone-800"
-                title="Delete bookmark"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
+          {list.map((bm) => (
+            <BookmarkRow key={bm.id} bm={bm} lang={lang} onDelete={deleteBookmark} />
           ))}
         </div>
       )}

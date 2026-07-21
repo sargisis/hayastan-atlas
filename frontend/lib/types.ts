@@ -52,5 +52,6 @@ export interface Bookmark {
   user_id: string;
   year: number;
   label: string;
+  note: string;
   created_at: string;
 }
