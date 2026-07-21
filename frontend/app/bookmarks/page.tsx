@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import type { Bookmark, User } from "@/lib/types";
-import { useLang, fmt } from "@/lib/lang";
+import { useLang, fmt, type Lang } from "@/lib/lang";
 
 const fetcher = (url: string) =>
   fetch(url, { credentials: "include" }).then((r) => {
@@ -14,7 +14,7 @@ const fetcher = (url: string) =>
 
 function BookmarkRow({ bm, lang, onDelete }: {
   bm: Bookmark;
-  lang: string;
+  lang: Lang;
   onDelete: (id: number) => void;
 }) {
   const [note, setNote] = useState(bm.note ?? "");
