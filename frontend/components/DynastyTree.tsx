@@ -85,7 +85,7 @@ export default function DynastyTree({ kings, dynastyName, color }: Props) {
           const { x, y } = pos(i);
           const name = lang === "hy" && king.name_hy ? king.name_hy : king.name;
           const start = fmt(king.reign_start, lang);
-          const end = fmt(king.reign_end, lang);
+          const end = king.reign_end != null ? fmt(king.reign_end, lang) : "?";
           const left = x - NODE_W / 2;
           const top = y - NODE_H / 2;
 
@@ -127,7 +127,6 @@ export default function DynastyTree({ kings, dynastyName, color }: Props) {
               {/* Name */}
               <foreignObject x={left + 4} y={top + 8} width={NODE_W - 8} height={NODE_H - 18}>
                 <div
-                  xmlns="http://www.w3.org/1999/xhtml"
                   style={{
                     fontSize: 11,
                     fontWeight: 600,

@@ -26,7 +26,7 @@ export default function RulerOfYear({ year, kings }: Props) {
   const name = lang === "hy" && ruler.name_hy ? ruler.name_hy : ruler.name;
   const dynasty = ruler.dynasty_name;
   const reignStart = fmt(ruler.reign_start, lang);
-  const reignEnd = fmt(ruler.reign_end, lang);
+  const reignEnd = ruler.reign_end != null ? fmt(ruler.reign_end, lang) : "?";
   const yearsReigned = (ruler.reign_end ?? year) - ruler.reign_start;
 
   return (

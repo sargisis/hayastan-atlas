@@ -98,11 +98,12 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         type: "fill",
         source: "territory",
         filter: ["==", ["get", "role"], "main"],
+        // "fill-color-transition" is valid at runtime but missing from maplibre's paint typings
         paint: {
           "fill-color": ["get", "color"],
           "fill-opacity": 0.32,
           "fill-color-transition": { duration: 600 },
-        },
+        } as any,
       });
       map.addLayer({
         id: "main-glow",
@@ -430,7 +431,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         const outcomeLabel = p.outcome === "victory" ? (hy ? "✅ Հաղ." : "✅ Victory") : p.outcome === "defeat" ? (hy ? "❌ Պ." : "❌ Defeat") : (hy ? "⚖️ Ничья" : "⚖️ Draw");
         battlePopup.setLngLat(coords).setHTML(
           `<div style="font-family:sans-serif;color:#e7e5e4;background:#1c1917;padding:12px 14px;border-radius:8px;border:1px solid #44403c">` +
-          `<div style="font-size:10px;color:${p.color};font-weight:700;letter-spacing:.08em;margin-bottom:4px">${esc(p.year < 0 ? `${Math.abs(+p.year)} BC` : `${p.year} AD`)} · ${outcomeLabel}</div>` +
+          `<div style="font-size:10px;color:${p.color};font-weight:700;letter-spacing:.08em;margin-bottom:4px">${esc(+p.year < 0 ? `${Math.abs(+p.year)} BC` : `${p.year} AD`)} · ${outcomeLabel}</div>` +
           `<div style="font-size:13px;font-weight:700;margin-bottom:6px">${esc(hy ? p.name_hy : p.name)}</div>` +
           `<div style="font-size:10px;color:#a8a29e;margin-bottom:2px">🛡 ${esc(hy ? p.armenian_side_hy : p.armenian_side)}</div>` +
           `<div style="font-size:10px;color:#a8a29e;margin-bottom:8px">⚔ ${esc(hy ? p.opponent_hy : p.opponent)}</div>` +
@@ -761,7 +762,7 @@ function MapControls({ mapRef, containerRef, lang }: {
       }
       map.setLayoutProperty("hillshade", "visibility", "visible");
     } else {
-      map.setTerrain(undefined);
+      map.setTerrain(null);
       if (map.getLayer("hillshade")) map.setLayoutProperty("hillshade", "visibility", "none");
     }
     setTerrain((v) => !v);
