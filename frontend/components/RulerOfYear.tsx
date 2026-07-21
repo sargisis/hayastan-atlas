@@ -32,7 +32,7 @@ export default function RulerOfYear({ year, kings }: Props) {
   return (
     <Link
       href={`/kings/${ruler.id}`}
-      className="absolute top-4 right-14 z-10 group"
+      className="absolute top-4 left-4 z-10 group"
       title={`View ${name}`}
     >
       <div
@@ -49,7 +49,7 @@ export default function RulerOfYear({ year, kings }: Props) {
 
         <div className="min-w-0">
           <div className="text-[9px] uppercase tracking-widest font-medium mb-0.5" style={{ color }}>
-            {lang === "hy" ? "Այժմ թagavorutyun" : "Ruling now"}
+            {lang === "hy" ? "Այժմ թագավոր" : "Ruling now"}
           </div>
           <div className="text-sm font-bold text-white truncate max-w-[140px]">{name}</div>
           <div className="text-[10px] text-stone-500 flex items-center gap-1.5 mt-0.5">

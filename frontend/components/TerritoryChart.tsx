@@ -22,7 +22,7 @@ const TERRITORY_DATA: { year: number; km2: number; label: string; label_hy: stri
   { year: 1375, km2: 0,       label: "No Armenian State", label_hy: "Անկախ պետություն չկա", color: "#7f8c8d" },
   { year: 1828, km2: 68_000,  label: "Russian Armenia",   label_hy: "Ռուսական Հայաստան", color: "#2c3e50" },
   { year: 1918, km2: 72_000,  label: "First Republic",    label_hy: "Առաջին Հանրապետություն", color: "#e74c3c" },
-  { year: 1920, km2: 29_800,  label: "Soviet Armenia",    label_hy: "Խorhrdային Հայաստան", color: "#c0392b" },
+  { year: 1920, km2: 29_800,  label: "Soviet Armenia",    label_hy: "Խորհրդային Հայաստան", color: "#c0392b" },
   { year: 1991, km2: 29_800,  label: "Republic of Armenia", label_hy: "Հայաստանի Հանրապետություն", color: "#f39c12" },
   { year: 2025, km2: 29_800,  label: "Republic of Armenia", label_hy: "Հայաստանի Հանրապետություն", color: "#f39c12" },
 ];
@@ -192,9 +192,10 @@ export default function TerritoryChart({ year }: Props) {
             </>
           )}
 
-          {/* X-axis labels */}
-          {[-800, -500, -100, 500, 1000, 1500, 2000].map((y) => (
-            <text key={y} x={xOf(y)} y={H - 4} textAnchor="middle"
+          {/* X-axis labels — anchor edge ticks inward so they don't clip at the viewBox */}
+          {[-800, -300, 500, 1000, 1500, 2000].map((y, i, arr) => (
+            <text key={y} x={xOf(y)} y={H - 4}
+              textAnchor={i === 0 ? "start" : i === arr.length - 1 ? "end" : "middle"}
               fill="#57534e" fontSize={7} fontFamily="monospace">
               {y < 0 ? `${Math.abs(y)}BC` : y}
             </text>
