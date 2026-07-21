@@ -42,6 +42,11 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	// Public
 	r.Get("/api/eras", h.ListEras)
 	r.Get("/api/eras/{id}/territory", h.GetTerritory)

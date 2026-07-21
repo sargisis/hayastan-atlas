@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useLang } from "@/lib/lang";
 
 const SHORTCUTS = [
-  { keys: ["Space"], en: "Play / Pause timeline", hy: "Նnerjum / Կangнar" },
-  { keys: ["←", "→"], en: "Jump to previous / next era", hy: "Нakh. / Harv. dар" },
-  { keys: ["1", "2", "3", "4"], en: "Set playback speed (0.5× – 5×)", hy: "Skavariutyan ary" },
-  { keys: ["F"], en: "Toggle fullscreen", hy: "Лia yкран" },
-  { keys: ["?"], en: "Show / hide this overlay", hy: "Цuyard / թнkch." },
-  { keys: ["Ctrl", "K"], en: "Open search", hy: "Нktur bats" },
-  { keys: ["Esc"], en: "Close panels & popups", hy: "Нktur tagnak." },
+  { keys: ["Space"], en: "Play / Pause timeline", hy: "Նվագել / Դադարեցնել" },
+  { keys: ["←", "→"], en: "Jump to previous / next era", hy: "Նախ. / Հաջ. դարաշրջան" },
+  { keys: ["1", "2", "3", "4"], en: "Set playback speed (0.5× – 5×)", hy: "Արագություն (0.5× – 5×)" },
+  { keys: ["F"], en: "Toggle fullscreen", hy: "Լիաէկրան" },
+  { keys: ["?"], en: "Show / hide this panel", hy: "Ցույց տալ / Թաքցնել" },
+  { keys: ["Ctrl", "K"], en: "Open search", hy: "Բացել որոնումը" },
+  { keys: ["Esc"], en: "Close panels & popups", hy: "Փակել վահանակները" },
 ];
 
 export default function ShortcutsOverlay() {
@@ -51,10 +51,10 @@ export default function ShortcutsOverlay() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-stone-800">
               <div>
                 <h2 className="text-base font-bold text-white">
-                  {lang === "hy" ? "Ստeghnik Baghner" : "Keyboard Shortcuts"}
+                  {lang === "hy" ? "Ստեղնաշարի դյուրանցումներ" : "Keyboard Shortcuts"}
                 </h2>
                 <p className="text-[11px] text-stone-500 mt-0.5">
-                  {lang === "hy" ? "Bghkut veravark" : "Press ? to toggle this panel"}
+                  {lang === "hy" ? "Սեղմեք ? ցուցադրելու/թաքցնելու" : "Press ? to toggle this panel"}
                 </p>
               </div>
               <button onClick={() => setOpen(false)} className="text-stone-600 hover:text-white transition-colors text-lg leading-none">✕</button>

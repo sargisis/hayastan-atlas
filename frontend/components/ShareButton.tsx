@@ -25,7 +25,7 @@ export default function ShareButton({ year }: Props) {
     <button
       onClick={share}
       title="Copy link to this year"
-      className="absolute bottom-6 right-4 z-10 flex items-center gap-2 px-3 py-2 rounded-lg bg-stone-950/80 backdrop-blur border border-stone-800 text-stone-400 hover:text-white hover:border-stone-600 transition-all text-xs font-medium shadow-xl"
+      className="absolute bottom-16 left-14 z-10 flex items-center gap-2 px-3 py-2 rounded-lg bg-stone-950/80 backdrop-blur border border-stone-800 text-stone-400 hover:text-white hover:border-stone-600 transition-all text-xs font-medium shadow-xl"
     >
       {copied ? (
         <>
