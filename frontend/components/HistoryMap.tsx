@@ -30,7 +30,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
   const [fetchYear, setFetchYear] = useState(year);
   const throttleRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; lastTime: number }>({ timer: null, lastTime: 0 });
   useEffect(() => {
-    const THROTTLE_MS = 500;
+    const THROTTLE_MS = 1500;
     const now = Date.now();
     const t = throttleRef.current;
     if (t.timer !== null) { clearTimeout(t.timer); t.timer = null; }
@@ -42,7 +42,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
       const cy = year;
       t.timer = setTimeout(() => { t.lastTime = Date.now(); t.timer = null; setFetchYear(cy); }, THROTTLE_MS - elapsed);
     }
-    return () => { if (throttleRef.current.timer !== null) { clearTimeout(throttleRef.current.timer); throttleRef.current.timer = null; } };
+    return () => { if (t.timer !== null) { clearTimeout(t.timer); t.timer = null; } };
   }, [year]);
 
   // Initialize map once
@@ -491,18 +491,21 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
     const map = mapRef.current;
     if (!map || !styleReady) return;
 
-    const controller = new AbortController();
+    // Use a cancelled flag instead of AbortController so in-flight requests
+    // can complete naturally — only their results are discarded if stale.
+    let cancelled = false;
 
     async function load() {
       try {
         // Era + events (for the panels and map pins)
-        const res = await fetch(`/api/timeline?year=${fetchYear}`, { signal: controller.signal });
+        const res = await fetch(`/api/timeline?year=${fetchYear}`);
+        if (cancelled) return;
         if (res.ok) {
           const data: TimelineResponse = await res.json();
+          if (cancelled) return;
           onEraLoad(data.era);
           onEventsLoad(data.events);
 
-          // Update event pins on the map (only events with coordinates)
           const eventSource = map!.getSource("events") as maplibregl.GeoJSONSource | undefined;
           eventSource?.setData({
             type: "FeatureCollection",
@@ -524,10 +527,12 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
 
         // Cities existing at this year
-        const cityRes = await fetch(`/api/cities?year=${fetchYear}`, { signal: controller.signal });
+        const cityRes = await fetch(`/api/cities?year=${fetchYear}`);
+        if (cancelled) return;
         if (cityRes.ok) {
           const cities: { name: string; name_hy: string; lat: number; lng: number; is_capital: boolean }[] =
             (await cityRes.json()) ?? [];
+          if (cancelled) return;
           const citySource = map!.getSource("cities") as maplibregl.GeoJSONSource | undefined;
           citySource?.setData({
             type: "FeatureCollection",
@@ -540,16 +545,17 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
 
         // Update historical routes for this year
-        const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
-        routeSource?.setData(routesToGeoJSON(fetchYear));
-
-        // Update battle markers — show battles within ±15 years of current year
-        const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
-        const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - fetchYear) <= 15);
-        battleSource?.setData(battleToGeoJSON(visibleBattles));
+        if (!cancelled) {
+          const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
+          routeSource?.setData(routesToGeoJSON(fetchYear));
+          const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
+          const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - fetchYear) <= 15);
+          battleSource?.setData(battleToGeoJSON(visibleBattles));
+        }
 
         // Territory phase for this exact year
-        const terrRes = await fetch(`/api/territory?year=${fetchYear}`, { signal: controller.signal });
+        const terrRes = await fetch(`/api/territory?year=${fetchYear}`);
+        if (cancelled) return;
         const source = map!.getSource("territory") as maplibregl.GeoJSONSource | undefined;
         if (!source) return;
 
@@ -559,7 +565,8 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
 
         const terr: { phase: number; label: string; fc: any } = await terrRes.json();
-        // Inject name_hy into each feature for Armenian map labels
+        if (cancelled) return;
+
         const fc = {
           ...terr.fc,
           features: (terr.fc.features ?? []).map((f: any) => ({
@@ -596,12 +603,12 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
         lastPhaseRef.current = terr.phase;
       } catch (e: unknown) {
-        if (e instanceof Error && e.name !== "AbortError") console.error(e);
+        if (!cancelled) console.error(e);
       }
     }
 
     load();
-    return () => controller.abort();
+    return () => { cancelled = true; };
   }, [fetchYear, lang, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
 
   return (
