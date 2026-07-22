@@ -12,7 +12,7 @@ interface Props {
 
 function EventList({ events, year, onJump }: Props) {
   const { lang } = useLang();
-  const nearby = events
+  const nearby = (events ?? [])
     .filter((ev) => Math.abs(ev.year - year) <= 100)
     .sort((a, b) => Math.abs(a.year - year) - Math.abs(b.year - year))
     .slice(0, 6);
@@ -67,7 +67,7 @@ export default function EventsPanel({ events, year, onJump }: Props) {
   const { lang } = useLang();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const nearby = events.filter((ev) => Math.abs(ev.year - year) <= 100);
+  const nearby = (events ?? []).filter((ev) => Math.abs(ev.year - year) <= 100);
 
   if (nearby.length === 0) return null;
 
