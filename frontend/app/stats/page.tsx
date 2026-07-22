@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR from "swr";
+import { useState } from "react";
 import type { Era } from "@/lib/types";
 import { useLang, fmt } from "@/lib/lang";
 import Link from "next/link";
@@ -31,6 +32,8 @@ export default function StatsPage() {
   const eraList = eras ?? [];
   const totalYears = eraList.reduce((s, e) => s + (e.end_year - e.start_year), 0);
   const maxDuration = Math.max(...eraList.map((e) => e.end_year - e.start_year), 1);
+  const [cmpA, setCmpA] = useState<string>("");
+  const [cmpB, setCmpB] = useState<string>("");
 
   // Territory chart: SVG area chart from ERA_AREA data
   const chartData = Object.entries(ERA_AREA);
@@ -177,6 +180,131 @@ export default function StatsPage() {
               })}
         </div>
       </section>
+
+      {/* Era comparison */}
+      {eraList.length > 1 && (
+        <section className="anim-fade-up mb-12">
+          <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <span className="w-1 h-5 rounded bg-armenia-orange inline-block" />
+            {hy ? "Դ. Համ." : "Era Comparison"}
+          </h2>
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6">
+            {/* Era selectors */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {[{ val: cmpA, set: setCmpA, label: hy ? "Դ. 1" : "Era A" },
+                { val: cmpB, set: setCmpB, label: hy ? "Դ. 2" : "Era B" }].map(({ val, set, label }, idx) => (
+                <div key={idx}>
+                  <label className="text-[10px] uppercase tracking-widest text-stone-500 mb-1 block">{label}</label>
+                  <select
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    className="w-full bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-armenia-orange"
+                  >
+                    <option value="">{hy ? "Ընտ. Դ." : "Select era…"}</option>
+                    {eraList.map((e) => (
+                      <option key={e.id} value={String(e.id)}>
+                        {hy && e.name_hy ? e.name_hy : e.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            {/* Comparison metrics */}
+            {(() => {
+              const eA = eraList.find((e) => String(e.id) === cmpA);
+              const eB = eraList.find((e) => String(e.id) === cmpB);
+              if (!eA || !eB) return (
+                <div className="text-center text-stone-600 py-8 text-sm">
+                  {hy ? "Ընտ. er. Era-ner ham." : "Select two eras above to compare"}
+                </div>
+              );
+              const durA = eA.end_year - eA.start_year;
+              const durB = eB.end_year - eB.start_year;
+              const areaA = ERA_AREA[eA.name] ?? 0;
+              const areaB = ERA_AREA[eB.name] ?? 0;
+              const maxDur = Math.max(durA, durB);
+              const maxArea = Math.max(areaA, areaB);
+
+              const rows = [
+                {
+                  label: hy ? "Ժամ." : "Duration",
+                  vA: `${durA} ${hy ? "tiv." : "yrs"}`, vB: `${durB} ${hy ? "tiv." : "yrs"}`,
+                  pA: durA / maxDur, pB: durB / maxDur,
+                },
+                ...(areaA > 0 && areaB > 0 ? [{
+                  label: hy ? "Territ." : "Territory",
+                  vA: `${Math.round(areaA / 1000)}K km²`, vB: `${Math.round(areaB / 1000)}K km²`,
+                  pA: areaA / maxArea, pB: areaB / maxArea,
+                }] : []),
+                {
+                  label: hy ? "Zharman." : "Period",
+                  vA: `${fmt(eA.start_year, lang)} – ${fmt(eA.end_year, lang)}`,
+                  vB: `${fmt(eB.start_year, lang)} – ${fmt(eB.end_year, lang)}`,
+                  pA: null, pB: null,
+                },
+              ];
+
+              return (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-[1fr_auto_1fr] gap-4 mb-2 text-center">
+                    <div className="text-sm font-bold truncate" style={{ color: eA.color }}>
+                      {hy && eA.name_hy ? eA.name_hy : eA.name}
+                    </div>
+                    <div className="text-xs text-stone-600 self-center">vs</div>
+                    <div className="text-sm font-bold truncate" style={{ color: eB.color }}>
+                      {hy && eB.name_hy ? eB.name_hy : eB.name}
+                    </div>
+                  </div>
+
+                  {rows.map(({ label, vA, vB, pA, pB }) => (
+                    <div key={label}>
+                      <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-2 text-center">{label}</div>
+                      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-white">{vA}</div>
+                          {pA !== null && (
+                            <div className="h-2 bg-stone-800 rounded-full mt-1.5 overflow-hidden flex justify-end">
+                              <div className="h-full rounded-full" style={{ width: `${pA * 100}%`, backgroundColor: eA.color }} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-px bg-stone-700 self-stretch" />
+                        <div className="text-left">
+                          <div className="text-sm font-semibold text-white">{vB}</div>
+                          {pB !== null && (
+                            <div className="h-2 bg-stone-800 rounded-full mt-1.5 overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${pB * 100}%`, backgroundColor: eB.color }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="pt-3 border-t border-stone-800 flex justify-center gap-4">
+                    <Link
+                      href={`/map?year=${eA.start_year}`}
+                      className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:text-white"
+                      style={{ borderColor: eA.color + "55", color: eA.color }}
+                    >
+                      {hy ? "Qtrt. →" : "View on map →"}
+                    </Link>
+                    <Link
+                      href={`/map?year=${eB.start_year}`}
+                      className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:text-white"
+                      style={{ borderColor: eB.color + "55", color: eB.color }}
+                    >
+                      {hy ? "Qtrt. →" : "View on map →"}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+      )}
 
       {/* Dynasty ruler count */}
       <section className="anim-fade-up mb-8">

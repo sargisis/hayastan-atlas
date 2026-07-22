@@ -25,7 +25,8 @@ const PRIMARY_LINKS = [
 const MORE_LINKS = [
   { href: "/dynasties", labelEn: "Dynasties", labelHy: "Արքայատոհմ", icon: "🏛️" },
   { href: "/stats", labelEn: "Statistics", labelHy: "Վիճակագրություն", icon: "📊" },
-  { href: "/quiz", labelEn: "Quiz", labelHy: "Վիկտ.", icon: "🎯" },
+  { href: "/lessons", labelEn: "Lessons", labelHy: "Դ. Ур.", icon: "🎓" },
+  { href: "/quiz", labelEn: "Quiz", labelHy: "Վикт.", icon: "🎯" },
   { href: "/bookmarks", labelEn: "Bookmarks", labelHy: "Էջանիշ", icon: "🔖" },
   { href: "/about", labelEn: "About", labelHy: "Մեր մասին", icon: "ℹ️" },
 ];

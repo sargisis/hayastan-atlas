@@ -11,6 +11,8 @@ interface Props {
   onEraLoad: (era: Era) => void;
   onEventsLoad: (events: Event[]) => void;
   onPhaseLoad?: (label: string) => void;
+  onMapClick?: (lat: number, lng: number) => void;
+  quizMode?: boolean;
 }
 
 // Dark basemap without modern country labels — historical borders draw on top
@@ -19,12 +21,14 @@ const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-styl
 const INIT_CENTER: [number, number] = [43.5, 39.5];
 const INIT_ZOOM = 5.2;
 
-export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad }: Props) {
+export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad, onMapClick, quizMode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const lastPhaseRef = useRef<number | null>(null);
   const [styleReady, setStyleReady] = useState(false);
   const { lang } = useLang();
+  const onMapClickRef = useRef(onMapClick);
+  useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
 
   // Throttle year fetching so rapid playback doesn't abort every in-flight request
   const [fetchYear, setFetchYear] = useState(year);
@@ -485,6 +489,11 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
       map.on("mouseenter", "route-line", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "route-line", () => { map.getCanvas().style.cursor = ""; });
 
+      // General map click — used by quiz mode
+      map.on("click", (e) => {
+        onMapClickRef.current?.(e.lngLat.lat, e.lngLat.lng);
+      });
+
       setStyleReady(true);
     });
 
@@ -635,7 +644,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />
-      {styleReady && <MapControls mapRef={mapRef} containerRef={containerRef} lang={lang} />}
+      {styleReady && !quizMode && <MapControls mapRef={mapRef} containerRef={containerRef} lang={lang} />}
     </div>
   );
 }
