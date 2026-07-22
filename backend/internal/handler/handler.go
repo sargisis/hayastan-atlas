@@ -148,6 +148,15 @@ func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, events)
 }
 
+func (h *Handler) ListAllEvents(w http.ResponseWriter, r *http.Request) {
+	events, err := h.store.ListAllEvents(r.Context())
+	if err != nil {
+		writeErr(w, 500, "internal error")
+		return
+	}
+	writeJSON(w, 200, events)
+}
+
 // GetTimeline returns the era active at ?year=N plus events at that year.
 func (h *Handler) GetTimeline(w http.ResponseWriter, r *http.Request) {
 	year := 0

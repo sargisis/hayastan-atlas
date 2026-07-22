@@ -131,7 +131,7 @@ func (s *Store) GetKing(ctx context.Context, id int) (*model.King, error) {
 
 func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, era_id, year, title, COALESCE(title_hy,''), COALESCE(description,''), COALESCE(description_hy,''), lat, lng
+		SELECT id, era_id, year, title, COALESCE(title_hy,''), COALESCE(description,''), COALESCE(description_hy,''), lat, lng, COALESCE(category,'political')
 		FROM events WHERE year <= $1
 		ORDER BY year`, year)
 	if err != nil {
@@ -142,7 +142,27 @@ func (s *Store) ListEventsByYear(ctx context.Context, year int) ([]model.Event, 
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.TitleHY, &e.Description, &e.DescriptionHY, &e.Lat, &e.Lng); err != nil {
+		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.TitleHY, &e.Description, &e.DescriptionHY, &e.Lat, &e.Lng, &e.Category); err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, rows.Err()
+}
+
+func (s *Store) ListAllEvents(ctx context.Context) ([]model.Event, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, era_id, year, title, COALESCE(title_hy,''), COALESCE(description,''), COALESCE(description_hy,''), lat, lng, COALESCE(category,'political')
+		FROM events ORDER BY year`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []model.Event
+	for rows.Next() {
+		var e model.Event
+		if err := rows.Scan(&e.ID, &e.EraID, &e.Year, &e.Title, &e.TitleHY, &e.Description, &e.DescriptionHY, &e.Lat, &e.Lng, &e.Category); err != nil {
 			return nil, err
 		}
 		events = append(events, e)

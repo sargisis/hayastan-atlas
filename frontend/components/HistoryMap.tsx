@@ -463,6 +463,28 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
       map.on("mouseenter", "battle-pins", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "battle-pins", () => { map.getCanvas().style.cursor = ""; });
 
+      // Route popup — click on route line to see details
+      const routePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px" });
+      map.on("click", "route-line", (e) => {
+        const feat = e.features?.[0];
+        if (!feat) return;
+        const p = feat.properties as { name: string; name_hy: string; color: string; kind: string };
+        const curLang = (map as any)._currentLang as string ?? "en";
+        const hy = curLang === "hy";
+        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const kindLabel = p.kind === "trade"
+          ? (hy ? "🛤️ Առ. ճ." : "🛤️ Trade route")
+          : (hy ? "⚔️ Ռ. ճ." : "⚔️ Military route");
+        routePopup.setLngLat(e.lngLat).setHTML(
+          `<div style="font-family:sans-serif;color:#e7e5e4;background:#1c1917;padding:10px 12px;border-radius:8px;border:1px solid #44403c">` +
+          `<div style="font-size:10px;color:${p.color};font-weight:700;letter-spacing:.08em;margin-bottom:4px">${kindLabel}</div>` +
+          `<div style="font-size:13px;font-weight:600">${esc(hy && p.name_hy ? p.name_hy : p.name)}</div>` +
+          `</div>`
+        ).addTo(map);
+      });
+      map.on("mouseenter", "route-line", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "route-line", () => { map.getCanvas().style.cursor = ""; });
+
       setStyleReady(true);
     });
 

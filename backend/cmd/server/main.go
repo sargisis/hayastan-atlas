@@ -54,7 +54,8 @@ func main() {
 	r.Get("/api/cities", h.CitiesByYear)       // ?year=N
 	r.Get("/api/kings", h.ListKings)
 	r.Get("/api/kings/{id}", h.GetKing)
-	r.Get("/api/events", h.ListEvents) // ?year=500
+	r.Get("/api/events", h.ListEvents)         // ?year=500
+	r.Get("/api/events/all", h.ListAllEvents)  // all events for chronicle
 	r.Get("/api/timeline", h.GetTimeline)
 
 	// Auth

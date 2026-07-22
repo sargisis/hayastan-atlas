@@ -52,6 +52,7 @@ type Event struct {
 	DescriptionHY string   `json:"description_hy"`
 	Lat           *float64 `json:"lat"`
 	Lng           *float64 `json:"lng"`
+	Category      string   `json:"category"`
 }
 
 type City struct {

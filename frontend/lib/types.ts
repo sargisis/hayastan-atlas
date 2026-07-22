@@ -33,6 +33,7 @@ export interface Event {
   description_hy: string;
   lat: number | null;
   lng: number | null;
+  category: string;
 }
 
 export interface TimelineResponse {

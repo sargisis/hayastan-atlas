@@ -11,6 +11,7 @@ import EventsPanel from "@/components/EventsPanel";
 import TerritoryChart from "@/components/TerritoryChart";
 import RulerOfYear from "@/components/RulerOfYear";
 import ShortcutsOverlay from "@/components/ShortcutsOverlay";
+import Chronicle from "@/components/Chronicle";
 import type { Era, Event, King } from "@/lib/types";
 import { useLang, fmt } from "@/lib/lang";
 import Link from "next/link";
@@ -89,6 +90,7 @@ export default function MapPage() {
         <EventsPanel events={events} year={year} onJump={handleTimelineChange} />
         <RulerOfYear year={year} kings={kings} />
         <TerritoryChart year={year} />
+        <Chronicle year={year} onJump={handleTimelineChange} />
         <ShortcutsOverlay />
         <ShareButton year={year} />
         <ExportButton year={year} />
