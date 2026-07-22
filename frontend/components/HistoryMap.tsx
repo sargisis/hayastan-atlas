@@ -367,18 +367,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad,
           "circle-opacity": 0.95,
         },
       });
-      map.addLayer({
-        id: "battle-icon",
-        type: "symbol",
-        source: "battles",
-        layout: {
-          "text-field": "X",
-          "text-size": 9,
-          "text-font": ["Open Sans Bold"],
-          "text-allow-overlap": true,
-        },
-        paint: { "text-color": "#000", "text-opacity": 0.85 },
-      });
+      // battle-icon layer removed — circle color (red/green/yellow) is sufficient
 
       // --- State name labels ---
       map.addLayer({
