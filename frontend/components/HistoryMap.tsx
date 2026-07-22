@@ -182,25 +182,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad,
           "text-halo-width": 1.2,
         },
       });
-      map.addLayer({
-        id: "arrow-head",
-        type: "symbol",
-        source: "territory",
-        filter: ["==", ["get", "role"], "arrowhead"],
-        layout: {
-          "text-field": ">",
-          "text-size": 14,
-          "text-font": ["Open Sans Bold"],
-          "text-rotate": ["get", "rotate"],
-          "text-rotation-alignment": "map",
-          "text-allow-overlap": true,
-        },
-        paint: {
-          "text-color": ["get", "color"],
-          "text-halo-color": "#000000",
-          "text-halo-width": 1,
-        },
-      });
+      // arrow-head symbol layer removed — dashed line conveys direction
 
       // --- Cities ---
       map.addSource("cities", {
