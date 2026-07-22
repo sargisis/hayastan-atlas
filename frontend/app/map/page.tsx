@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import ShareButton from "@/components/ShareButton";
 import ExportButton from "@/components/ExportButton";
@@ -21,16 +21,9 @@ const HistoryMap = dynamic(() => import("@/components/HistoryMap"), { ssr: false
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-function initialYear(): number {
-  if (typeof window !== "undefined") {
-    const p = new URLSearchParams(window.location.search).get("year");
-    if (p) {
-      const n = parseInt(p, 10);
-      if (!Number.isNaN(n)) return Math.max(-800, Math.min(2025, n));
-    }
-  }
-  return -782;
-}
+// Always start with the default so server and client render the same HTML.
+// After mount, read the URL param on the client only.
+const DEFAULT_YEAR = -782;
 
 // Era-transition "History Pulse" toast — appears briefly when era changes
 function HistoryPulse({ era }: { era: Era | null }) {
@@ -55,7 +48,16 @@ function HistoryPulse({ era }: { era: Era | null }) {
 }
 
 export default function MapPage() {
-  const [year, setYear] = useState<number>(initialYear);
+  const [year, setYear] = useState<number>(DEFAULT_YEAR);
+
+  // Read ?year= from URL after mount (client only) to avoid hydration mismatch
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("year");
+    if (p) {
+      const n = parseInt(p, 10);
+      if (!Number.isNaN(n)) setYear(Math.max(-800, Math.min(2025, n)));
+    }
+  }, []);
   const [era, setEra] = useState<Era | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const lastEraId = useRef<number | null>(null);
