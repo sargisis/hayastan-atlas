@@ -497,15 +497,20 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
     async function load() {
       try {
-        // Era + events (for the panels and map pins)
-        const res = await fetch(`/api/timeline?year=${fetchYear}`);
+        // Fire all three requests in parallel so total time = slowest, not sum
+        const [timelineRes, cityRes, terrRes] = await Promise.all([
+          fetch(`/api/timeline?year=${fetchYear}`),
+          fetch(`/api/cities?year=${fetchYear}`),
+          fetch(`/api/territory?year=${fetchYear}`),
+        ]);
         if (cancelled) return;
-        if (res.ok) {
-          const data: TimelineResponse = await res.json();
+
+        // --- Timeline / events ---
+        if (timelineRes.ok) {
+          const data: TimelineResponse = await timelineRes.json();
           if (cancelled) return;
           onEraLoad(data.era);
           onEventsLoad(data.events);
-
           const eventSource = map!.getSource("events") as maplibregl.GeoJSONSource | undefined;
           eventSource?.setData({
             type: "FeatureCollection",
@@ -526,9 +531,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
           });
         }
 
-        // Cities existing at this year
-        const cityRes = await fetch(`/api/cities?year=${fetchYear}`);
-        if (cancelled) return;
+        // --- Cities ---
         if (cityRes.ok) {
           const cities: { name: string; name_hy: string; lat: number; lng: number; is_capital: boolean }[] =
             (await cityRes.json()) ?? [];
@@ -544,18 +547,13 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
           });
         }
 
-        // Update historical routes for this year
-        if (!cancelled) {
-          const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
-          routeSource?.setData(routesToGeoJSON(fetchYear));
-          const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
-          const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - fetchYear) <= 15);
-          battleSource?.setData(battleToGeoJSON(visibleBattles));
-        }
+        // --- Static layers (routes, battles) ---
+        const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
+        routeSource?.setData(routesToGeoJSON(fetchYear));
+        const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
+        battleSource?.setData(battleToGeoJSON(BATTLES.filter((b) => Math.abs(b.year - fetchYear) <= 15)));
 
-        // Territory phase for this exact year
-        const terrRes = await fetch(`/api/territory?year=${fetchYear}`);
-        if (cancelled) return;
+        // --- Territory ---
         const source = map!.getSource("territory") as maplibregl.GeoJSONSource | undefined;
         if (!source) return;
 
