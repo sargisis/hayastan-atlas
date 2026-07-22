@@ -26,6 +26,25 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
   const [styleReady, setStyleReady] = useState(false);
   const { lang } = useLang();
 
+  // Throttle year fetching so rapid playback doesn't abort every in-flight request
+  const [fetchYear, setFetchYear] = useState(year);
+  const throttleRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; lastTime: number }>({ timer: null, lastTime: 0 });
+  useEffect(() => {
+    const THROTTLE_MS = 500;
+    const now = Date.now();
+    const t = throttleRef.current;
+    if (t.timer !== null) { clearTimeout(t.timer); t.timer = null; }
+    const elapsed = now - t.lastTime;
+    if (elapsed >= THROTTLE_MS) {
+      t.lastTime = now;
+      setFetchYear(year);
+    } else {
+      const cy = year;
+      t.timer = setTimeout(() => { t.lastTime = Date.now(); t.timer = null; setFetchYear(cy); }, THROTTLE_MS - elapsed);
+    }
+    return () => { if (throttleRef.current.timer !== null) { clearTimeout(throttleRef.current.timer); throttleRef.current.timer = null; } };
+  }, [year]);
+
   // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -377,6 +396,8 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
           "text-font": ["Open Sans Bold"],
           "text-letter-spacing": 0.15,
           "text-transform": "uppercase",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
         },
         paint: {
           "text-color": [
@@ -475,7 +496,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
     async function load() {
       try {
         // Era + events (for the panels and map pins)
-        const res = await fetch(`/api/timeline?year=${year}`, { signal: controller.signal });
+        const res = await fetch(`/api/timeline?year=${fetchYear}`, { signal: controller.signal });
         if (res.ok) {
           const data: TimelineResponse = await res.json();
           onEraLoad(data.era);
@@ -503,7 +524,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
         }
 
         // Cities existing at this year
-        const cityRes = await fetch(`/api/cities?year=${year}`, { signal: controller.signal });
+        const cityRes = await fetch(`/api/cities?year=${fetchYear}`, { signal: controller.signal });
         if (cityRes.ok) {
           const cities: { name: string; name_hy: string; lat: number; lng: number; is_capital: boolean }[] =
             (await cityRes.json()) ?? [];
@@ -520,15 +541,15 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
         // Update historical routes for this year
         const routeSource = map!.getSource("routes") as maplibregl.GeoJSONSource | undefined;
-        routeSource?.setData(routesToGeoJSON(year));
+        routeSource?.setData(routesToGeoJSON(fetchYear));
 
         // Update battle markers — show battles within ±15 years of current year
         const battleSource = map!.getSource("battles") as maplibregl.GeoJSONSource | undefined;
-        const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - year) <= 15);
+        const visibleBattles = BATTLES.filter((b) => Math.abs(b.year - fetchYear) <= 15);
         battleSource?.setData(battleToGeoJSON(visibleBattles));
 
         // Territory phase for this exact year
-        const terrRes = await fetch(`/api/territory?year=${year}`, { signal: controller.signal });
+        const terrRes = await fetch(`/api/territory?year=${fetchYear}`, { signal: controller.signal });
         const source = map!.getSource("territory") as maplibregl.GeoJSONSource | undefined;
         if (!source) return;
 
@@ -581,7 +602,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
 
     load();
     return () => controller.abort();
-  }, [year, lang, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
+  }, [fetchYear, lang, styleReady, onEraLoad, onEventsLoad, onPhaseLoad]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
