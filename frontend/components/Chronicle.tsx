@@ -40,7 +40,7 @@ export default function Chronicle({ year, onJump }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
 
-  const filtered = (allEvents ?? []).filter(
+  const filtered = (Array.isArray(allEvents) ? allEvents : []).filter(
     (e) => category === "all" || e.category === category
   );
 
