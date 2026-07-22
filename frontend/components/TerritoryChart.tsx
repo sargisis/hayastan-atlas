@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLang, fmt } from "@/lib/lang";
 
 // Historical territory sizes in km² (approximate, based on scholarly estimates)
@@ -67,6 +67,8 @@ export default function TerritoryChart({ year }: Props) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
   const [hoverYear, setHoverYear] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const current = useMemo(() => interpolate(year), [year]);
   const hovered = useMemo(() => hoverYear !== null ? interpolate(hoverYear) : null, [hoverYear]);
@@ -97,6 +99,8 @@ export default function TerritoryChart({ year }: Props) {
 
   const displayInfo = hovered ?? current;
   const displayYear = hoverYear ?? year;
+
+  if (!mounted) return null;
 
   if (!open) {
     return (
