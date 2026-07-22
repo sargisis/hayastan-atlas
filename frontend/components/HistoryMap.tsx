@@ -547,6 +547,7 @@ export default function HistoryMap({ year, onEraLoad, onEventsLoad, onPhaseLoad 
                   description_hy: ev.description_hy,
                   year: ev.year,
                   label: fmt(ev.year, "en"),
+                  category: ev.category ?? "political",
                 },
                 geometry: { type: "Point" as const, coordinates: [ev.lng!, ev.lat!] },
               })),
@@ -776,6 +777,16 @@ const LAYERS = [
 
 const TERRAIN_SOURCE = "maplibre-dem";
 
+const EVENT_CATEGORIES = [
+  { id: "all",       icon: "📜", labelEn: "All",      labelHy: "Բոլ." },
+  { id: "war",       icon: "⚔️", labelEn: "Wars",     labelHy: "Պատ." },
+  { id: "political", icon: "👑", labelEn: "Political", labelHy: "Քաղ." },
+  { id: "religion",  icon: "✝️", labelEn: "Religion",  labelHy: "Կրոն" },
+  { id: "trade",     icon: "🛤️", labelEn: "Trade",    labelHy: "Առ."  },
+  { id: "culture",   icon: "🎨", labelEn: "Culture",  labelHy: "Մշակ." },
+] as const;
+type EventCat = typeof EVENT_CATEGORIES[number]["id"];
+
 function MapControls({ mapRef, containerRef, lang }: {
   mapRef: React.RefObject<maplibregl.Map | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -787,6 +798,18 @@ function MapControls({ mapRef, containerRef, lang }: {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [terrain, setTerrain] = useState(false);
+  const [eventCat, setEventCat] = useState<EventCat>("all");
+
+  // Apply event category filter to map layers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const f = eventCat === "all" ? null : ["==", ["get", "category"], eventCat];
+    try {
+      map.setFilter("event-pins", f as any);
+      map.setFilter("event-pin-labels", f as any);
+    } catch {}
+  }, [eventCat, mapRef]);
 
   const toggleTerrain = () => {
     const map = mapRef.current;
@@ -920,6 +943,25 @@ function MapControls({ mapRef, containerRef, lang }: {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 18l4-8 4 4 4-6 4 10H3z" />
           </svg>
         </button>
+      </div>
+
+      {/* Event category filter — bottom-left pill strip */}
+      <div className="absolute bottom-4 left-4 z-10 flex gap-1 flex-wrap max-w-xs">
+        {EVENT_CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setEventCat(c.id)}
+            title={hy ? c.labelHy : c.labelEn}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border transition-all shadow ${
+              eventCat === c.id
+                ? "bg-armenia-orange text-stone-950 border-armenia-orange"
+                : "bg-stone-950/80 backdrop-blur border-stone-700 text-stone-400 hover:text-white"
+            }`}
+          >
+            <span>{c.icon}</span>
+            <span>{hy ? c.labelHy : c.labelEn}</span>
+          </button>
+        ))}
       </div>
 
       {/* Layers panel */}

@@ -217,9 +217,84 @@ export default function KingPage() {
         )}
       </div>
 
+      {/* Dynasty succession tree */}
+      <div className="anim-fade-up mt-10" style={{ animationDelay: "250ms" }}>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-500 mb-4">
+          {lang === "hy" ? "Դինաստիայի հաջորդականություն" : "Dynasty Succession"}
+        </h2>
+        <div className="overflow-x-auto pb-2 -mx-2 px-2">
+          <div className="flex gap-2 min-w-max">
+            {dynastyKings.map((k, i) => {
+              const isCurrent = k.id === king.id;
+              return (
+                <Link
+                  key={k.id}
+                  href={`/kings/${k.id}`}
+                  className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all min-w-[80px] text-center ${
+                    isCurrent
+                      ? "border-[var(--col)] bg-[var(--col)]/10 shadow-lg"
+                      : "border-stone-800 bg-stone-900 hover:border-stone-600"
+                  }`}
+                  style={{ "--col": color } as React.CSSProperties}
+                >
+                  {/* Connector line */}
+                  <div className="flex items-center w-full gap-1 justify-center">
+                    {i > 0 && <div className="h-px flex-1 bg-stone-700" />}
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                        isCurrent ? "text-stone-950" : "text-stone-400"
+                      }`}
+                      style={isCurrent ? { backgroundColor: color } : { backgroundColor: "#292524" }}
+                    >
+                      {i + 1}
+                    </div>
+                    {i < dynastyKings.length - 1 && <div className="h-px flex-1 bg-stone-700" />}
+                  </div>
+                  <span className={`text-[11px] font-semibold leading-tight ${isCurrent ? "text-white" : "text-stone-400"}`}>
+                    {lang === "hy" && k.name_hy ? k.name_hy : k.name}
+                  </span>
+                  <span className="text-[10px] tabular-nums text-stone-600">{fmt(k.reign_start, lang)}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Territory during reign */}
+      <div className="anim-fade-up mt-10" style={{ animationDelay: "300ms" }}>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-500 mb-4">
+          {lang === "hy" ? "Տարածք թագավորության ընթացքում" : "Territory During Reign"}
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { labelEn: "At accession", labelHy: "Գահ բարձրանալ.", year: king.reign_start },
+            ...(reignEnd != null ? [{ labelEn: "Mid-reign", labelHy: "Թ. կես", year: Math.floor((king.reign_start + reignEnd) / 2) }] : []),
+            ...(reignEnd != null ? [{ labelEn: "End of reign", labelHy: "Թ. վերջ", year: reignEnd }] : []),
+          ].map(({ labelEn, labelHy, year: y }) => (
+            <Link
+              key={y}
+              href={`/map?year=${y}`}
+              className="group flex flex-col items-center gap-2 bg-stone-900 border border-stone-800 hover:border-stone-600 rounded-xl p-4 transition-all text-center"
+            >
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                style={{ backgroundColor: color + "22", color }}
+              >
+                🗺️
+              </div>
+              <span className="text-xs text-stone-400 group-hover:text-stone-200 transition-colors leading-tight">
+                {lang === "hy" ? labelHy : labelEn}
+              </span>
+              <span className="text-xs font-bold tabular-nums" style={{ color }}>{fmt(y, lang)}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Prev / Next navigation */}
       {(prevKing || nextKing) && (
-        <div className="anim-fade-up mt-10 grid grid-cols-2 gap-4" style={{ animationDelay: "250ms" }}>
+        <div className="anim-fade-up mt-10 grid grid-cols-2 gap-4" style={{ animationDelay: "350ms" }}>
           {prevKing ? (
             <Link
               href={`/kings/${prevKing.id}`}
@@ -238,7 +313,7 @@ export default function KingPage() {
               href={`/kings/${nextKing.id}`}
               className="flex flex-col gap-1 bg-stone-900 border border-stone-800 rounded-xl p-4 hover:border-stone-600 transition-colors group text-right"
             >
-              <span className="text-xs text-stone-600 uppercase tracking-widest">{lang === "hy" ? "Հաջորդ" : "Next"} →</span>
+              <span className="text-xs text-stone-600 uppercase tracking-widest">{lang === "hy" ? "Հաջ." : "Next"} →</span>
               <span className="text-sm font-semibold text-stone-300 group-hover:text-white transition-colors">
                 {lang === "hy" && nextKing.name_hy ? nextKing.name_hy : nextKing.name}
               </span>
